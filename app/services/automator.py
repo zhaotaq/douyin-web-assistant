@@ -9,6 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+import undetected_chromedriver as uc
 
 # 这是一个简单的内存状态管理器，用于在Web请求之间共享任务状态。
 # 在生产环境中，可能会使用更健壮的方案，如Redis或数据库。
@@ -45,6 +46,17 @@ class AutomationService:
         service = ChromeService(ChromeDriverManager().install())
         self.driver = webdriver.Chrome(service=service, options=options)
         self._update_log("浏览器驱动初始化完成。")
+
+    def _setup_undetected_driver(self):
+        """初始化一个增强的、更难被检测到的浏览器驱动，专门用于登录。"""
+        self._update_log("正在初始化增强型浏览器驱动...")
+        options = uc.ChromeOptions()
+        # options.add_argument('--headless') # 获取cookie时不能用无头模式
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        # 不需要手动添加反检测参数，uc库会自动处理
+        self.driver = uc.Chrome(options=options)
+        self._update_log("增强型浏览器驱动初始化完成。")
 
     def _load_cookies(self):
         """根据 self.account 加载对应的cookie文件"""
@@ -201,6 +213,51 @@ class AutomationService:
         time.sleep(2)
 
 
+def generate_cookie_file(account_name: str):
+    """
+    启动一个浏览器会话，让用户手动登录，然后抓取并保存cookie。
+    """
+    # 这里我们创建一个临时的service实例，因为它只用于本次操作
+    temp_service = AutomationService(urls=[], account=account_name, stop_event=threading.Event())
+    driver = None
+    try:
+        temp_service._update_log(f"为账户 '{account_name}' 开始获取Cookie...")
+        # 使用新的、更稳定的驱动
+        temp_service._setup_undetected_driver()
+        driver = temp_service.driver
+        
+        driver.get("https://creator.douyin.com/")
+        
+        temp_service._update_log("浏览器已打开，请在创作者中心页面扫描二维码登录。程序将自动检测登录状态...")
+        
+        # 等待用户登录成功，最长等待5分钟。通过检测URL是否跳转到创作者后台主页来判断，这比检测元素更可靠。
+        wait = WebDriverWait(driver, 300, 1) # 等待300秒，每秒检查一次
+        wait.until(EC.url_contains("/creator-micro/"))
+        
+        temp_service._update_log("成功检测到登录！正在保存Cookie...")
+        
+        # 获取Cookie
+        cookies = driver.get_cookies()
+        
+        # 保存Cookie
+        project_root = Path(__file__).parent.parent.parent
+        cookie_dir = project_root / "cookies" / "douyin_uploader" / "accounts"
+        cookie_dir.mkdir(parents=True, exist_ok=True) # 确保目录存在
+        cookie_file = cookie_dir / f"{account_name}.json"
+
+        with open(cookie_file, 'w', encoding='utf-8') as f:
+            json.dump(cookies, f, indent=4)
+            
+        temp_service._update_log(f"Cookie已成功保存到: {cookie_file}")
+
+    except Exception as e:
+        temp_service._update_log(f"获取Cookie失败: {e}")
+    finally:
+        if driver:
+            driver.quit()
+        temp_service._update_log("获取Cookie流程结束。")
+
+
 def get_current_status():
     """获取当前任务状态和日志"""
     return {"status": task_state['status'], "log": task_state['log']}
@@ -227,6 +284,13 @@ def start_automation_thread(urls: list, account: str):
     task_state['thread'] = thread
     thread.start()
     return True # 启动成功
+
+def start_cookie_generation_thread(account_name: str):
+    """在后台线程中启动Cookie生成流程，避免阻塞API"""
+    # 这个流程是独立的，不应该被现有的任务状态管理所干扰
+    thread = threading.Thread(target=generate_cookie_file, args=(account_name,))
+    thread.start()
+    return True
 
 def stop_task():
     """

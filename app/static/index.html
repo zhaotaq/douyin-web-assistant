@@ -22,14 +22,23 @@
                 </div>
             </section>
 
-            <section class="control-panel">
+            <div class="card">
                 <h2>任务控制</h2>
-                <textarea id="urls-input" placeholder="请每行输入一个抖音主页URL..."></textarea>
+                <textarea id="urls-input" rows="4" placeholder="请输入一个或多个用户主页URL，每行一个..."></textarea>
                 <div class="button-group">
-                    <button id="start-task-btn">开始任务</button>
-                    <button id="stop-task-btn" disabled>停止任务</button>
+                    <button id="start-task-btn" class="btn btn-primary">开始任务</button>
+                    <button id="stop-task-btn" class="btn btn-danger" disabled>停止任务</button>
                 </div>
-            </section>
+            </div>
+
+            <div class="card">
+                <h2>获取新Cookie</h2>
+                <input type="text" id="account-name-input" placeholder="请输入新的账户名称...">
+                <div class="button-group">
+                    <button id="get-cookie-btn" class="btn btn-secondary">开始获取</button>
+                </div>
+                <p class="help-text">点击开始后，将弹出一个新浏览器窗口。请在窗口内扫码登录，登录成功后窗口会自动关闭，新账户将出现在下方列表中。</p>
+            </div>
 
             <section class="account-panel">
                 <h2>可用账户</h2>
