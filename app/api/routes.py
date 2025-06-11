@@ -30,10 +30,14 @@ def run_task():
         # 规约要求: 400 Bad Request
         return jsonify({"code": 4001, "error": "Request body is invalid or 'urls' is empty."}), 400
 
+    if 'account' not in data or not data['account']:
+        return jsonify({"code": 4002, "error": "'account' is missing from request."}), 400
+
     urls = data['urls']
+    account = data['account']
     
     # 尝试在后台启动任务
-    success = automator.start_automation_thread(urls)
+    success = automator.start_automation_thread(urls, account)
     
     if success:
         # 规约要求: 202 Accepted
@@ -67,12 +71,9 @@ def get_accounts():
         for root, dirs, files in os.walk(COOKIES_DIR):
             for filename in files:
                 # 我们假设 cookie 文件以 .txt 或 .json 结尾
-                if filename.endswith(('.txt', '.json')):
+                if filename.endswith(('.json')):
                     # 移除文件扩展名作为账户名
                     account_name = os.path.splitext(filename)[0]
-                    # 根据旧文件格式，移除可能存在的 '_processed' 后缀
-                    if account_name.endswith('_processed'):
-                        account_name = account_name.replace('_processed', '')
                     accounts.append(account_name)
 
     except FileNotFoundError:

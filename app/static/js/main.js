@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- State Management ---
     let statusInterval; // To hold the interval ID for polling status
+    let selectedAccount = null; // To hold the selected account name
 
     // --- API Functions ---
 
@@ -52,6 +53,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 result.data.accounts.forEach(account => {
                     const li = document.createElement('li');
                     li.textContent = account;
+                    li.dataset.account = account; // Store account name in data attribute
+                    li.addEventListener('click', () => {
+                        // Clear previous selection
+                        document.querySelectorAll('#account-list li').forEach(item => {
+                            item.classList.remove('selected');
+                        });
+                        // Set new selection
+                        li.classList.add('selected');
+                        selectedAccount = li.dataset.account;
+                    });
                     accountList.appendChild(li);
                 });
             } else if(result.data.accounts.length === 0) {
@@ -100,11 +111,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        if (!selectedAccount) {
+            alert('请从列表中选择一个可用账户！');
+            return;
+        }
+
         try {
             const response = await fetch(`${API_BASE_URL}/run_task`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ urls }),
+                body: JSON.stringify({ urls, account: selectedAccount }),
             });
 
             const result = await response.json();

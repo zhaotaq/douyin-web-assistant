@@ -162,6 +162,12 @@ ul#account-list li:last-child {
     border-bottom: none;
 }
 
+#account-list li.selected {
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+}
+
 /* Footer */
 footer {
     text-align: center;

@@ -1,3 +1,4 @@
 Flask
 Flask-Cors
-selenium 
+selenium
+webdriver-manager 
