@@ -1,0 +1,73 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## PART 3: AGILE DEVELOPMENT & GIT WORKFLOW
+
+This protocol ensures consistent development, versioning, and the ability to roll back to stable states.
+
+### 3.1. Git Branching Model (GitFlow-Lite)
+
+* `main`: **生产分支**. 永远是稳定的、可随时部署的版本。禁止直接推送。
+* `develop`: **主开发分支**. 集成所有已完成的功能，是新功能分支的起点。
+* `feature/<issue_no>-<short-description>`: **特性分支**. 所有新工作都在此分支进行。
+
+### 3.2. Automated Git Workflow & Versioning
+
+1.  **Create an Issue**: 在GitHub上为新功能或Bug创建Issue，获得编号 (e.g., #12)。
+
+2.  **Branch Out**: 从最新的`develop`分支创建特性分支。
+    ```bash
+    # 切换到开发分支
+    git checkout develop
+    # 拉取最新代码
+    git pull origin develop
+    # 创建并切换到新特性分支
+    git checkout -b feature/12-implement-stop-api
+    ```
+
+3.  **Code & Test**: 编写功能代码和测试代码，并本地运行测试。
+    ```bash
+    # 运行所有测试
+    pytest
+    ```
+
+4.  **Commit Conventionally**: 使用“约定式提交”规范来写commit message。
+    ```bash
+    # feat: 新功能, fix: Bug修复, docs: 文档, style: 格式, refactor: 重构, test: 测试
+    git commit -m "feat(#12): implement POST /api/stop_task endpoint"
+    ```
+
+5.  **Create a Pull Request (PR)**: 推送特性分支到GitHub，并创建一个合并到`develop`分支的PR。
+
+### 3.3. Release & Rollback Strategy
+
+1.  **Prepare for Release**: 当`develop`分支稳定后，准备发布新版本。
+    ```bash
+    # 切换到主分支
+    git checkout main
+    # 合并开发分支的稳定代码
+    git merge develop
+    ```
+
+2.  **Tag the Version**: 创建一个带附注的Git标签，这是你的“版本快照”。
+    ```bash
+    # -a 创建附注标签, -m 添加说明
+    git tag -a v1.1.0 -m "Release v1.1.0: Added task stop and status check features."
+    ```
+
+3.  **Push to Origin**: 推送`main`分支和新标签。
+    ```bash
+    # 推送主分支的变更
+    git push origin main
+    # 推送标签
+    git push origin v1.1.0
+    ```
+
+4.  **How to Roll Back**: 如果新版本有严重问题，可基于旧标签创建修复分支，或直接回退。
+    ```bash
+    # 检出上一个稳定版本的代码进行查看或打包
+    git checkout v1.1.0
+
+    ```

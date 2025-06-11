@@ -1,0 +1,64 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## PART 4: TESTING & QUALITY ASSURANCE
+
+### 4.1. Backend Testing (`pytest`)
+
+**集成测试示例 (`tests/test_api.py`)**:
+```python
+import pytest
+from app import create_app  # 从 app/__init__.py 导入应用工厂函数
+from unittest.mock import patch # 导入mock工具，用于模拟(替换)函数
+
+# pytest的fixture，为每个测试函数提供一个干净的测试客户端
+@pytest.fixture
+def client():
+    # 创建一个Flask app实例
+    app = create_app()
+    # 设置为测试模式
+    app.config['TESTING'] = True
+    # 创建一个测试客户端
+    with app.test_client() as client:
+        # yield关键字将客户端对象提供给测试函数
+        yield client
+
+def test_get_status_idle(client):
+    """测试场景: 当系统空闲时, GET /api/status 接口是否返回正确的状态"""
+    # 使用测试客户端发送GET请求
+    rv = client.get('/api/status')
+    # 断言: HTTP状态码应为200
+    assert rv.status_code == 200
+    # 获取返回的JSON数据
+    json_data = rv.get_json()
+    # 断言: 业务码应为0
+    assert json_data['code'] == 0
+    # 断言: 任务状态应为 'idle'
+    assert json_data['data']['status'] == 'idle'
+
+# @patch装饰器: 替换掉 'app.services.automator.start_automation_thread' 这个函数
+# 这样在测试时就不会真正启动耗时的Selenium任务
+@patch('app.services.automator.start_automation_thread')
+def test_run_task_success(mock_start_task, client):
+    """测试场景: POST /api/run_task 能否在不实际运行的情况下成功调用后台任务"""
+    # 配置mock函数，当它被调用时，不返回任何东西
+    mock_start_task.return_value = None
+    
+    # 准备要发送的JSON数据
+    urls = {"urls": ["[http://some.url](http://some.url)"]}
+    # 使用测试客户端发送POST请求
+    rv = client.post('/api/run_task', json=urls)
+    
+    # 断言: HTTP状态码应为202 (Accepted)
+    assert rv.status_code == 202
+    json_data = rv.get_json()
+    # 断言: 业务码应为0
+    assert json_data['code'] == 0
+    # 断言: 返回的消息应符合预期
+    assert "Task accepted" in json_data['message']
+    
+    # 断言: 确保我们模拟的后台启动函数被且仅被调用了一次
+
+    mock_start_task.assert_called_once()

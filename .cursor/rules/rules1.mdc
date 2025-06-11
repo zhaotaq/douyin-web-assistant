@@ -1,0 +1,42 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Technical Specification & Agile Protocol: Douyin Automation Assistant (Web)
+
+## PART 1: SYSTEM ARCHITECTURE & PROJECT STRUCTURE
+
+### 1.1. High-Level Architecture
+
+The system follows a simple three-tier architecture:
+
+1.  **Frontend (Browser)**: A static single-page application (`index.html` with vanilla JavaScript) responsible for user interaction and presenting data.
+2.  **Backend (Flask API Server)**: A Python Flask application that exposes a RESTful API to control the automation tasks. It acts as the bridge between the user interface and the core automation logic.
+3.  **Automation Service (Selenium)**: The core automation engine, adapted from the original scripts. It runs in a separate thread managed by the Flask backend to avoid blocking API requests.
+
+### 1.2. Project & Repository Structure
+
+The project will adhere to the following directory structure to ensure modularity and separation of concerns.
+
+douyin-web-assistant/
+├── .git/
+├── .github/
+│   └── PULL_REQUEST_TEMPLATE.md  # (可选) PR模板, 保证团队提交PR的格式一致
+├── .gitignore                  # Git忽略文件, 用于忽略__pycache__、.env、.vscode等
+├── app/                        # 核心应用目录
+│   ├── init.py             # 应用工厂函数(create_app), 初始化Flask App和插件
+│   ├── api/                    # API蓝图(Blueprints), 用于模块化路由
+│   │   ├── init.py
+│   │   └── routes.py           # 所有API端点(Endpoint)的定义
+│   ├── services/               # 业务逻辑层, 处理核心功能
+│   │   └── automator.py        # 封装Selenium自动化、账号管理和任务状态的核心逻辑
+│   ├── static/                 # 前端静态文件 (由Flask托管)
+│   │   ├── css/
+│   │   │   └── main.css        # 样式表
+│   │   ├── js/
+│   │   │   └── main.js         # 前端JavaScript逻辑
+│   │   └── index.html          # 主页面
+│   └── templates/              # (可选) 如果未来需要服务端渲染, HTML放这里
+
+├── cookies/                    # 用户Cookie数据,

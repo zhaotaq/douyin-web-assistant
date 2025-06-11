@@ -1,0 +1,63 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## PART 2: API SPECIFICATION (V1.1)
+
+This section defines the API contract. All development must strictly adhere to this specification.
+
+### Common Response Schema
+
+* **Success**: `{"code": 0, "message": "Success", "data": {...}}`
+* **Error**: `{"code": <error_code>, "error": "<error_message>"}`
+
+### Endpoints
+
+#### `GET /api/status`
+* **Description**: Retrieves the current status of the automation task.
+* **Success Response (200 OK)**:
+    ```json
+    {
+      "code": 0, "message": "Success",
+      "data": {
+        "status": "idle" | "running" | "completed" | "failed" | "stopped", // 枚举类型：空闲|运行中|完成|失败|已停止
+        "log": "最新的日志信息或当前正在处理的主播名"
+      }
+    }
+    ```
+
+#### `GET /api/accounts`
+* **Description**: Fetches the list of available user accounts from the `cookies` directory.
+* **Success Response (200 OK)**:
+    ```json
+    {
+      "code": 0, "message": "Success",
+      "data": {
+        "count": 3,
+        "accounts": ["User_A", "User_B", "User_C"] // 从cookie文件名解析出的账户昵称
+      }
+    }
+    ```
+
+#### `POST /api/run_task`
+* **Description**: Initiates a new automation task in a background thread.
+* **Request Body**: `application/json`
+    ```json
+    { "urls": ["[https://www.douyin.com/user/](mdc:https:/www.douyin.com/user)...", "[https://www.douyin.com/user/](mdc:https:/www.douyin.com/user)..."] }
+    ```
+* **Success Response (202 Accepted)**: `202`表示服务器已接受请求，但尚未处理完成，非常适合长任务场景。
+    ```json
+    { "code": 0, "message": "Task accepted and started in the background." }
+    ```
+* **Error Responses**:
+    * `400 Bad Request`: `{"code": 4001, "error": "Request body is invalid or 'urls' is empty."}`
+    * `409 Conflict`: `{"code": 4009, "error": "A task is already running."}`
+
+#### `POST /api/stop_task`
+* **Description**: Sends a signal to stop the currently running background task.
+* **Success Response (200 OK)**:
+    ```json
+    { "code": 0, "message": "Stop signal sent. The task will terminate shortly." }
+
+    ```
