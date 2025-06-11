@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from flask import Blueprint, jsonify, request
 from app.services import automator
 
@@ -88,23 +89,32 @@ def login_and_get_cookie():
 def get_accounts():
     """
     获取所有可用的账户列表。
-    账户列表是通过递归扫描 'cookies' 目录下的文件名得出的。
+    账户列表是通过扫描 'cookies/douyin_uploader/accounts' 目录下的文件名得出的。
     """
-    COOKIES_DIR = 'cookies'
+    project_root = Path(__file__).parent.parent.parent
+    # 规约: 将路径修改为精确的账户Cookie存放目录
+    ACCOUNTS_DIR = project_root / 'cookies' / 'douyin_uploader' / 'accounts'
+    
     accounts = []
     try:
-        # 使用 os.walk 进行递归遍历，找到所有子目录中的文件
-        for root, dirs, files in os.walk(COOKIES_DIR):
-            for filename in files:
-                # 我们假设 cookie 文件以 .txt 或 .json 结尾
-                if filename.endswith(('.json')):
-                    # 移除文件扩展名作为账户名
-                    account_name = os.path.splitext(filename)[0]
-                    accounts.append(account_name)
+        if not os.path.isdir(ACCOUNTS_DIR):
+             print(f"警告: 账户Cookie目录 '{ACCOUNTS_DIR}' 不是一个有效的目录。")
+             return jsonify({
+                "code": 0,
+                "message": "Success (directory not found)",
+                "data": {"count": 0, "accounts": []}
+            })
+
+        # 规约: 不再使用递归的os.walk, 而是直接遍历目标目录
+        for filename in os.listdir(ACCOUNTS_DIR):
+            # 规约: 确保我们只处理文件, 并且文件以.json结尾
+            full_path = os.path.join(ACCOUNTS_DIR, filename)
+            if os.path.isfile(full_path) and filename.endswith('.json'):
+                account_name = os.path.splitext(filename)[0]
+                accounts.append(account_name)
 
     except FileNotFoundError:
-        # 如果 cookies 目录不存在，则日志中记录，并返回空列表
-        print(f"警告: Cookie 目录 '{COOKIES_DIR}' 未找到。")
+        print(f"警告: 账户Cookie目录 '{ACCOUNTS_DIR}' 未找到。")
         pass
     
     # 去重并排序，保证列表干净且顺序稳定

@@ -43,8 +43,9 @@ class AutomationService:
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument("--disable-blink-features=AutomationControlled") # 防止被检测
-        service = ChromeService(ChromeDriverManager().install())
-        self.driver = webdriver.Chrome(service=service, options=options)
+        
+        # Selenium 4.10+ 会自动处理驱动下载和匹配，不再需要 webdriver-manager
+        self.driver = webdriver.Chrome(options=options)
         self._update_log("浏览器驱动初始化完成。")
 
     def _setup_undetected_driver(self):
@@ -55,7 +56,8 @@ class AutomationService:
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         # 不需要手动添加反检测参数，uc库会自动处理
-        self.driver = uc.Chrome(options=options)
+        # 强制指定浏览器主版本号，以解决驱动不匹配的问题
+        self.driver = uc.Chrome(options=options, version_main=137)
         self._update_log("增强型浏览器驱动初始化完成。")
 
     def _load_cookies(self):

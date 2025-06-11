@@ -2,4 +2,5 @@ Flask
 Flask-Cors
 selenium
 webdriver-manager
-undetected-chromedriver 
+undetected-chromedriver
+pygame
