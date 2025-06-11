@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlsInput = document.getElementById('urls-input');
     const startTaskBtn = document.getElementById('start-task-btn');
     const stopTaskBtn = document.getElementById('stop-task-btn');
+    const accountNameInput = document.getElementById('account-name-input');
+    const getCookieBtn = document.getElementById('get-cookie-btn');
 
     const API_BASE_URL = 'http://127.0.0.1:5000/api';
 
@@ -156,6 +158,46 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Error stopping task:", error);
             alert('停止任务时发生网络错误。');
+        }
+    });
+
+    /**
+     * Handles the click event for the "Get Cookie" button.
+     */
+    getCookieBtn.addEventListener('click', async () => {
+        const accountName = accountNameInput.value.trim();
+        if (!accountName) {
+            alert('请输入一个账户名称！');
+            return;
+        }
+
+        // Disable button to prevent multiple clicks
+        getCookieBtn.disabled = true;
+        getCookieBtn.textContent = '正在等待登录...';
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ account_name: accountName }),
+            });
+
+            const result = await response.json();
+
+            if (response.status === 202) {
+                alert('请求已发送！请在新弹出的浏览器窗口中扫描二维码登录。登录成功后，此处的账户列表会自动刷新。');
+            } else {
+                alert(`启动失败: ${result.error}`);
+            }
+        } catch (error) {
+            console.error("Error starting cookie generation:", error);
+            alert('启动获取Cookie流程时发生网络错误。');
+        } finally {
+            // Re-enable the button
+            getCookieBtn.disabled = false;
+            getCookieBtn.textContent = '开始获取';
+            // Refresh the account list, as the process on the backend might have finished
+            setTimeout(fetchAccounts, 3000); // Give it a moment before refreshing
         }
     });
 
