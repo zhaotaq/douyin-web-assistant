@@ -1,4 +1,8 @@
 import os
+import random
+import json
+import re
+import time
 from pathlib import Path
 from flask import Blueprint, jsonify, request
 from app.services import automator
@@ -24,27 +28,46 @@ def get_status():
 def run_task():
     """
     启动一个新的自动化任务。
+    该接口将自动从可用的账户池中随机选择一个账户来执行任务。
     """
-    # 规约要求: 检查请求体
     data = request.get_json()
     if not data or 'urls' not in data or not data['urls']:
-        # 规约要求: 400 Bad Request
         return jsonify({"code": 4001, "error": "Request body is invalid or 'urls' is empty."}), 400
 
-    if 'account' not in data or not data['account']:
-        return jsonify({"code": 4002, "error": "'account' is missing from request."}), 400
+    # 规约: 不再从请求中获取账户，而是在后台获取账户列表
+    try:
+        project_root = Path(__file__).parent.parent.parent
+        ACCOUNTS_DIR = project_root / 'cookies' / 'douyin_uploader' / 'accounts'
+        
+        if not os.path.isdir(ACCOUNTS_DIR):
+            return jsonify({"code": 5002, "error": "服务器端账户目录配置错误。"}), 500
+
+        valid_accounts = [
+            os.path.splitext(f)[0] for f in os.listdir(ACCOUNTS_DIR) 
+            if os.path.isfile(os.path.join(ACCOUNTS_DIR, f)) and f.endswith('.json')
+        ]
+
+        if not valid_accounts:
+            return jsonify({"code": 4011, "error": "当前没有任何可用账户来执行任务。"}), 400
+            
+        # 规约: 随机选择一个账户
+        account = random.choice(valid_accounts)
+        
+    except Exception as e:
+        print(f"Error during account selection: {e}")
+        return jsonify({"code": 5003, "error": "在选择账户时发生内部错误。"}), 500
 
     urls = data['urls']
-    account = data['account']
     
-    # 尝试在后台启动任务
     success = automator.start_automation_thread(urls, account)
     
     if success:
-        # 规约要求: 202 Accepted
-        return jsonify({"code": 0, "message": "Task accepted and started in the background."}), 202
+        # 规约: 在返回信息中可以包含本次随机选用的账户名，但这仅用于日志，前端不需要展示
+        return jsonify({
+            "code": 0, 
+            "message": f"Task accepted for account '{account}' and started in the background."
+        }), 202
     else:
-        # 规约要求: 409 Conflict
         return jsonify({"code": 4009, "error": "A task is already running."}), 409
 
 @bp.route('/stop_task', methods=['POST'])
@@ -59,31 +82,58 @@ def stop_task():
         # 可以自定义一个错误码，表示没有任务在运行
         return jsonify({"code": 4010, "error": "No task is currently running."}), 400
 
-@bp.route('/login', methods=['POST'])
-def login_and_get_cookie():
+@bp.route('/save_cookie', methods=['POST'])
+def save_cookie():
     """
-    启动一个流程来获取新的cookie。
+    接收用户提交的Cookie数据，并以时间戳为名保存为文件。
     """
     data = request.get_json()
-    if not data or 'account_name' not in data or not data['account_name']:
-        return jsonify({"code": 4003, "error": "Request body is invalid or 'account_name' is empty."}), 400
+    # 1. 验证请求体
+    if not data or 'cookieData' not in data:
+        return jsonify({"code": 4001, "error": "请求体必须包含 'cookieData'。"}), 400
 
-    account_name = data['account_name']
-    
-    # 检查账户名是否包含无效字符，避免安全问题
-    if any(char in account_name for char in r'/\:*?"<>|'):
-        return jsonify({"code": 4004, "error": "Account name contains invalid characters."}), 400
+    cookie_data_str = data['cookieData']
 
-    success = automator.start_cookie_generation_thread(account_name)
+    # 2. 验证Cookie数据
+    if not isinstance(cookie_data_str, str) or not cookie_data_str.strip():
+        return jsonify({"code": 4004, "error": "Cookie数据 'cookieData' 不能为空。"}), 400
+
+    # 3. 生成文件名
+    # 使用毫秒级时间戳确保文件名唯一
+    safe_account_name = str(int(time.time() * 1000))
     
-    if success:
-        return jsonify({
-            "code": 0, 
-            "message": "Cookie generation process started. Please login in the new browser window."
-        }), 202
-    else:
-        # 理论上这里很难失败，除非线程创建失败
-        return jsonify({"code": 5001, "error": "Failed to start cookie generation process."}), 500
+    try:
+        # 尝试解析JSON
+        parsed_data = json.loads(cookie_data_str)
+        
+        # 兼容两种格式：直接是Cookie数组，或者是包含 'cookies' 键的JSON对象
+        cookie_list_to_save = []
+        if isinstance(parsed_data, list):
+            cookie_list_to_save = parsed_data
+        elif isinstance(parsed_data, dict) and 'cookies' in parsed_data and isinstance(parsed_data['cookies'], list):
+            cookie_list_to_save = parsed_data['cookies']
+        else:
+            return jsonify({"code": 4005, "error": "无法识别Cookie数据格式。请确保它是一个JSON数组，或包含'cookies'键的JSON对象。"}), 400
+
+    except json.JSONDecodeError:
+        return jsonify({"code": 4006, "error": "Cookie数据格式不是有效的JSON。"}), 400
+
+    # 4. 保存文件
+    try:
+        project_root = Path(__file__).parent.parent.parent
+        cookie_dir = project_root / "cookies" / "douyin_uploader" / "accounts"
+        cookie_dir.mkdir(parents=True, exist_ok=True)
+        
+        file_path = cookie_dir / f"{safe_account_name}.json"
+
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(cookie_list_to_save, f, indent=4)
+        
+        return jsonify({"code": 0, "message": "Cookie for account '{safe_account_name}' saved successfully."}), 201
+
+    except Exception as e:
+        print(f"Error saving cookie file: {e}")
+        return jsonify({"code": 5001, "error": "保存Cookie文件时发生服务器内部错误。"}), 500
 
 @bp.route('/accounts', methods=['GET'])
 def get_accounts():

@@ -3,54 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>抖音自动化助手</title>
+    <title>龙四爷互助网 - 专注自动化点赞、评论</title>
     <link rel="stylesheet" href="/static/css/main.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>抖音自动化助手</h1>
-            <p>Web版 - v1.0</p>
-        </header>
+        <div class="hero-section">
+            <header>
+                <h1>龙四爷互助网</h1>
+                <p>专注自动化点赞、评论</p>
+            </header>
+
+            <section class="pool-status-panel">
+                <h2>共享池状态</h2>
+                <p>当前可用账户数</p>
+                <div id="account-stats-count" class="pool-count">...</div>
+                <p class="pool-subtext">您的每一次贡献，都在点亮整个社区</p>
+            </section>
+        </div>
 
         <main>
-            <section class="status-panel">
-                <h2>任务状态</h2>
-                <div class="status-box">
-                    <p><strong>状态:</strong> <span id="status-text">正在获取...</span></p>
-                    <p><strong>日志:</strong> <span id="log-text"></span></p>
+            <div class="step-one-panel">
+                <div class="step-header">
+                    <span class="step-number">1</span>
+                    <h2>贡献您的力量 (提交Cookie)</h2>
                 </div>
-            </section>
-
-            <div class="card">
-                <h2>任务控制</h2>
-                <textarea id="urls-input" rows="4" placeholder="请输入一个或多个用户主页URL，每行一个..."></textarea>
-                <div class="button-group">
-                    <button id="start-task-btn" class="btn btn-primary">开始任务</button>
-                    <button id="stop-task-btn" class="btn btn-danger" disabled>停止任务</button>
+                <div class="card">
+                    <p class="description">请在此处提交您在抖音官网获取的Cookie信息。您的参与是启动任务的前提。这不会泄露您的密码，仅用于授权本工具执行任务。</p>
+                    <div class="form-group">
+                        <label for="cookie-data-input">Cookie (JSON格式)</label>
+                        <textarea id="cookie-data-input" rows="5" placeholder="请在此粘贴从浏览器开发者工具获取的Cookie JSON数组..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button id="save-cookie-btn">提交并加入共享池</button>
+                        <a href="#" id="show-tutorial-link" class="tutorial-link">如何获取我的Cookie？</a>
+                    </div>
                 </div>
             </div>
 
-            <div class="card">
-                <h2>获取新Cookie</h2>
-                <input type="text" id="account-name-input" placeholder="请输入新的账户名称...">
-                <div class="button-group">
-                    <button id="get-cookie-btn" class="btn btn-secondary">开始获取</button>
+            <div class="step-two-panel" id="step-two-container">
+                <div class="step-header">
+                    <span class="step-number">2</span>
+                    <h2>开始自动化任务</h2>
                 </div>
-                <p class="help-text">点击开始后，将弹出一个新浏览器窗口。请在窗口内扫码登录，登录成功后窗口会自动关闭，新账户将出现在下方列表中。</p>
+                <div class="card" id="task-card">
+                    <div id="task-lock-overlay">
+                        <div class="lock-content">
+                            <span>🔒</span>
+                            <p>共享池为空，任务功能已锁定</p>
+                            <p>请先完成第一步，贡献您的Cookie以解锁</p>
+                        </div>
+                    </div>
+                    <div class="task-content-wrapper">
+                        <div class="form-group">
+                            <label for="url-input">抖音主页地址 (每行一个)</label>
+                            <textarea id="url-input" placeholder="请每行输入一个抖音主页地址..."></textarea>
+                        </div>
+                        <button id="run-btn">开始执行</button>
+                        <button id="stop-btn" class="stop-button">停止任务</button>
+                        
+                        <div class="status-panel">
+                            <h3>任务实时状态</h3>
+                            <div class="status-box">
+                                <div class="status-line">
+                                    <p><strong>状态:</strong> <span id="status-text">待命</span></p>
+                                </div>
+                                <div id="log-viewer" class="log-viewer">
+                                    <pre id="log-text">系统准备就绪...</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <section class="account-panel">
-                <h2>可用账户</h2>
-                <ul id="account-list">
-                    <li>正在加载...</li>
-                </ul>
-            </section>
         </main>
 
         <footer>
             <p>严格遵守工程规范</p>
         </footer>
+    </div>
+
+    <!-- 教程模态窗口 -->
+    <div id="tutorial-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close-btn" id="modal-close-btn">&times;</span>
+            <h2>如何获取抖音Cookie？</h2>
+            <p>我们推荐使用浏览器扩展程序来安全、便捷地导出Cookie。以下是详细步骤：</p>
+            <ol>
+                <li>
+                    <strong>第一步：安装 "Cookie-Editor" 扩展</strong><br>
+                    请根据您的浏览器，在官方商店中搜索并安装"Cookie-Editor"。<br>
+                    <a href="https://chrome.google.com/webstore/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm" target="_blank" rel="noopener noreferrer">Chrome 用户点此安装</a> |
+                    <a href="https://addons.mozilla.org/firefox/addon/cookie-editor/" target="_blank" rel="noopener noreferrer">Firefox 用户点此安装</a> |
+                    <a href="https://microsoftedge.microsoft.com/addons/detail/cookie-editor/neaplmfkghagebokkhpjpoebhdledlfi" target="_blank" rel="noopener noreferrer">Edge 用户点此安装</a>
+                </li>
+                <li>
+                    <strong>第二步：登录抖音创作服务平台</strong><br>
+                    在新标签页中访问 <a href="https://creator.douyin.com" target="_blank" rel="noopener noreferrer">creator.douyin.com</a> 并完成登录。
+                </li>
+                <li>
+                    <strong>第三步：导出Cookie</strong><br>
+                    登录后，点击浏览器右上角的 "Cookie-Editor" 扩展图标 (🍪)。在弹出的窗口中，点击右下角的 <strong>Export</strong> 按钮，然后选择 <strong>Export as JSON</strong>，即可将Cookie数据复制到剪贴板。<br>
+                    <img src="/static/img/image.png" alt="导出Cookie步骤示意图" class="tutorial-image">
+                </li>
+                <li>
+                    <strong>第四步：粘贴并保存</strong><br>
+                    回到本页面，在下方的 "Cookie (JSON格式)" 文本框中粘贴刚才复制的所有内容。最后点击"保存Cookie"按钮。
+                </li>
+            </ol>
+            <p class="warning"><strong>安全提示：</strong> 此过程不会暴露您的密码。请勿在公共或不信任的电脑上操作，也不要与他人分享您导出的Cookie数据。</p>
+        </div>
     </div>
 
     <script src="/static/js/main.js"></script>

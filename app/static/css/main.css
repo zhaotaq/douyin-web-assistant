@@ -16,7 +16,7 @@ body {
     width: 100%;
     max-width: 800px;
     background-color: #ffffff;
-    border-radius: 12px;
+    border-radius: 16px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     margin: 2rem auto;
@@ -25,9 +25,8 @@ body {
 
 /* Header */
 header {
-    background-color: #2c3e50;
     color: #ffffff;
-    padding: 20px 30px;
+    padding: 20px 30px 0;
     text-align: center;
 }
 
@@ -35,6 +34,7 @@ header h1 {
     margin: 0;
     font-size: 24px;
     font-weight: 600;
+    color: #bdc3c7;
 }
 
 header p {
@@ -62,11 +62,41 @@ section h2 {
 
 /* Status Panel */
 .status-box {
-    background-color: #ecf0f1;
-    border-radius: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    text-align: left;
+    border-radius: 12px;
     padding: 15px 20px;
     font-size: 14px;
     line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+}
+
+.status-line p {
+    margin: 0 0 10px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.log-viewer {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 10px 15px;
+    height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+#log-text {
+    margin: 0;
+    padding: 0;
+    font-family: "SF Mono", "Consolas", "Menlo", monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: #444;
 }
 
 .status-box p {
@@ -75,72 +105,142 @@ section h2 {
 
 #status-text {
     font-weight: bold;
-    padding: 3px 8px;
-    border-radius: 5px;
+    padding: 4px 12px;
+    border-radius: 20px;
     color: #fff;
+    font-size: 0.9em;
 }
 
 /* Status-specific colors */
-#status-text.idle { background-color: #3498db; } /* Blue */
+#status-text.idle { background-color: #3498db; } /* Blue - Theme Color */
 #status-text.running { background-color: #f39c12; } /* Orange */
 #status-text.completed { background-color: #2ecc71; } /* Green */
 #status-text.failed, #status-text.stopped { background-color: #e74c3c; } /* Red */
 
-/* Control Panel */
-textarea#urls-input {
-    width: 100%;
-    min-height: 120px;
-    padding: 12px;
-    border: 1px solid #dcdfe6;
-    border-radius: 8px;
-    font-size: 14px;
-    line-height: 1.5;
-    resize: vertical;
-    box-sizing: border-box;
-    margin-bottom: 15px;
-}
-
-.button-group {
-    display: flex;
-    gap: 15px;
-}
-
-.button-group button {
-    flex-grow: 1;
-    padding: 12px 20px;
+/* Generic Button Styles */
+button {
+    padding: 12px 25px;
     font-size: 16px;
     font-weight: 500;
     border: none;
-    border-radius: 8px;
+    border-radius: 25px;
     cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.1s ease;
+    transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent; /* For mobile */
 }
 
-#start-task-btn {
-    background-color: #3498db;
-    color: white;
+button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-#start-task-btn:hover {
-    background-color: #2980b9;
-}
-
-#stop-task-btn {
-    background-color: #e74c3c;
-    color: white;
-}
-
-#stop-task-btn:hover {
-    background-color: #c0392b;
+button:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 button:disabled {
     background-color: #bdc3c7;
     cursor: not-allowed;
+    opacity: 0.7;
 }
 
-button:active {
-    transform: scale(0.98);
+/* Primary Button */
+#save-cookie-btn, #run-btn {
+    background-color: #3498db;
+    color: white;
+}
+#save-cookie-btn:hover:not(:disabled), #run-btn:hover:not(:disabled) {
+    background-color: #2980b9;
+}
+
+/* Stop Button */
+#stop-btn {
+    background-color: #e74c3c;
+    color: white;
+}
+#stop-btn:hover:not(:disabled) {
+    background-color: #c0392b;
+}
+
+/* Inputs and Textareas */
+textarea, input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dcdfe6;
+    border-radius: 12px;
+    font-size: 1em;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+textarea:focus, input[type="text"]:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+/* Card */
+.card {
+    background-color: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    border: 1px solid #e8e8e8;
+}
+
+/* Link Styles */
+a {
+    color: #3498db;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #2980b9;
+}
+
+/* Tutorial Modal */
+.modal-content {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    width: 90%;
+    max-width: 700px;
+    position: relative;
+    animation: fadeIn 0.3s ease-out;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    color: #95a5a6;
+    cursor: pointer;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+.modal-close-btn:hover {
+    color: #34495e;
+    transform: rotate(90deg);
+}
+
+/* Remove old specific button styles if they exist */
+#start-task-btn, #stop-task-btn {
+    /* These styles are now handled by generic button styles */
+}
+.button-group {
+    /* This class can be removed if not used elsewhere */
+}
+
+/* Ensure the step number also uses the theme color */
+.step-header .step-number {
+    background-color: #3498db;
 }
 
 /* Account Panel */
@@ -179,15 +279,6 @@ footer {
     background-color: #f8f9fa;
 }
 
-.card {
-    background-color: #fff;
-    border-radius: 8px;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    border: 1px solid #e8e8e8;
-}
-
 #status-box {
     padding: 16px;
     border-radius: 6px;
@@ -217,93 +308,281 @@ footer {
 .failed { background-color: #dc3545; }
 .stopped { background-color: #ffc107; color: #333; }
 
-
-textarea, input[type="text"] {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 1em;
-    margin-bottom: 16px;
-    box-sizing: border-box; /* Important */
-}
-
-.button-group {
-    display: flex;
-    gap: 10px;
-}
-
-.btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1em;
-    font-weight: 500;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-.btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.btn:active {
-    transform: translateY(1px);
-}
-
-.btn-primary {
-    background-color: #007bff;
-    color: white;
-}
-.btn-primary:hover:not(:disabled) { background-color: #0056b3; }
-
-.btn-danger {
-    background-color: #dc3545;
-    color: white;
-}
-.btn-danger:hover:not(:disabled) { background-color: #c82333; }
-
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-}
-.btn-secondary:hover:not(:disabled) { background-color: #5a6268; }
-
-
-#account-list {
-    list-style: none;
-    padding: 0;
-    max-height: 250px;
-    overflow-y: auto;
-    border: 1px solid #e8e8e8;
-    border-radius: 4px;
-}
-
-#account-list li {
-    padding: 12px 15px;
-    border-bottom: 1px solid #e8e8e8;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-#account-list li:last-child {
-    border-bottom: none;
-}
-
-#account-list li:hover {
-    background-color: #f8f9fa;
-}
-
-#account-list li.selected {
-    background-color: #007bff;
-    color: white;
-    font-weight: bold;
-}
-
 .help-text {
     font-size: 0.9em;
     color: #666;
     margin-top: 16px;
     margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #495057;
+}
+
+.tutorial-link-container {
+    text-align: right;
+    margin-top: 15px;
+}
+
+.tutorial-link-container a {
+    color: #007bff;
+    text-decoration: none;
+    font-size: 0.9em;
+}
+
+.tutorial-link-container a:hover {
+    text-decoration: underline;
+}
+
+/* --- 教程模态窗口样式 --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 40px 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-size: 22px;
+}
+
+.modal-content p {
+    line-height: 1.7;
+    margin-bottom: 15px;
+}
+
+.modal-content ol {
+    padding-left: 25px;
+}
+
+.modal-content li {
+    margin-bottom: 20px;
+}
+
+.modal-content li strong {
+    font-weight: 600;
+    color: #34495e;
+}
+
+.modal-content a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.modal-content a:hover {
+    text-decoration: underline;
+}
+
+.modal-content .warning {
+    background-color: #fffbe6;
+    border-left: 4px solid #f39c12;
+    padding: 15px;
+    font-size: 0.95em;
+    border-radius: 4px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.tutorial-image {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid #ddd;
+}
+
+#account-stats {
+    padding: 16px;
+    margin-top: 10px;
+    border-radius: 6px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    text-align: center;
+}
+
+/* New Styles for Step-based Layout */
+
+.hero-section {
+    background: linear-gradient(45deg, #2c3e50, #46637f);
+    padding: 1px 0 30px 0;
+    margin: -1rem -1rem 30px -1rem;
+    color: white;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.pool-status-panel {
+    text-align: center;
+    padding: 20px;
+    color: white;
+    position: relative;
+}
+
+.pool-status-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 200px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.pool-status-panel h2 {
+    margin: 20px 0 0 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #ecf0f1;
+}
+
+.pool-status-panel p {
+    margin: 5px 0 10px;
+    color: #bdc3c7;
+}
+
+.pool-count {
+    font-size: 4rem;
+    font-weight: 700;
+    color: #2ecc71; /* Bright Green */
+    line-height: 1;
+    margin: 10px 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.pool-subtext {
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.step-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.step-header .step-number {
+    background-color: #3498db;
+    color: white;
+    font-weight: bold;
+    font-size: 1.5rem;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.step-header h2 {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.step-one-panel, .step-two-panel {
+    margin-bottom: 20px;
+}
+
+#task-card {
+    position: relative;
+}
+
+.task-content-wrapper {
+    transition: filter 0.3s ease;
+}
+
+#task-lock-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 8px;
+    z-index: 10;
+    color: #34495e;
+    padding: 20px;
+}
+
+.lock-content span {
+    font-size: 3rem;
+}
+.lock-content p {
+    margin: 10px 0 0;
+    font-weight: 500;
+}
+.lock-content p:last-child {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+.card.locked .task-content-wrapper {
+    filter: blur(5px);
+    pointer-events: none;
+    user-select: none;
+}
+
+.card:not(.locked) #task-lock-overlay {
+    display: none;
+}
+
+.status-panel {
+    margin-top: 25px;
+}
+.status-panel h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #34495e;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+textarea#cookie-data-input {
+    min-height: 80px;
+}
+
+/* Form Actions container */
+.form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.tutorial-link {
+    font-size: 14px;
+    margin-left: 20px; /* Add some space from the button */
 } 
