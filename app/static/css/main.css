@@ -1,0 +1,172 @@
+/* General Body Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f4f7f9;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+/* Main Container */
+.container {
+    width: 100%;
+    max-width: 800px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+/* Header */
+header {
+    background-color: #2c3e50;
+    color: #ffffff;
+    padding: 20px 30px;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+header p {
+    margin: 5px 0 0;
+    color: #bdc3c7;
+}
+
+/* Main Content Area */
+main {
+    padding: 30px;
+    display: grid;
+    gap: 30px;
+}
+
+/* Section Styles */
+section h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #34495e;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 10px;
+}
+
+/* Status Panel */
+.status-box {
+    background-color: #ecf0f1;
+    border-radius: 8px;
+    padding: 15px 20px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.status-box p {
+    margin: 5px 0;
+}
+
+#status-text {
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 5px;
+    color: #fff;
+}
+
+/* Status-specific colors */
+#status-text.idle { background-color: #3498db; } /* Blue */
+#status-text.running { background-color: #f39c12; } /* Orange */
+#status-text.completed { background-color: #2ecc71; } /* Green */
+#status-text.failed, #status-text.stopped { background-color: #e74c3c; } /* Red */
+
+/* Control Panel */
+textarea#urls-input {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    border: 1px solid #dcdfe6;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+}
+
+.button-group button {
+    flex-grow: 1;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+#start-task-btn {
+    background-color: #3498db;
+    color: white;
+}
+
+#start-task-btn:hover {
+    background-color: #2980b9;
+}
+
+#stop-task-btn {
+    background-color: #e74c3c;
+    color: white;
+}
+
+#stop-task-btn:hover {
+    background-color: #c0392b;
+}
+
+button:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* Account Panel */
+ul#account-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #ecf0f1;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+ul#account-list li {
+    padding: 8px 15px;
+    border-bottom: 1px solid #f2f2f2;
+}
+
+ul#account-list li:last-child {
+    border-bottom: none;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+    color: #95a5a6;
+    background-color: #f8f9fa;
+} 

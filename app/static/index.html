@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抖音自动化助手</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>抖音自动化助手</h1>
+            <p>Web版 - v1.0</p>
+        </header>
+
+        <main>
+            <section class="status-panel">
+                <h2>任务状态</h2>
+                <div class="status-box">
+                    <p><strong>状态:</strong> <span id="status-text">正在获取...</span></p>
+                    <p><strong>日志:</strong> <span id="log-text"></span></p>
+                </div>
+            </section>
+
+            <section class="control-panel">
+                <h2>任务控制</h2>
+                <textarea id="urls-input" placeholder="请每行输入一个抖音主页URL..."></textarea>
+                <div class="button-group">
+                    <button id="start-task-btn">开始任务</button>
+                    <button id="stop-task-btn" disabled>停止任务</button>
+                </div>
+            </section>
+
+            <section class="account-panel">
+                <h2>可用账户</h2>
+                <ul id="account-list">
+                    <li>正在加载...</li>
+                </ul>
+            </section>
+        </main>
+
+        <footer>
+            <p>严格遵守工程规范</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html> 
