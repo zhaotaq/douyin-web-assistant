@@ -1,0 +1,101 @@
+{
+  "total_processed_videos": 2207,
+  "total_likes": 1129,
+  "total_comments": 1344,
+  "daily_stats": {
+    "2025-05-25": {
+      "processed": 172,
+      "likes": 7,
+      "comments": 29,
+      "errors": 1
+    },
+    "2025-05-26": {
+      "processed": 607,
+      "likes": 104,
+      "comments": 291,
+      "errors": 0
+    },
+    "2025-05-27": {
+      "processed": 151,
+      "likes": 42,
+      "comments": 81,
+      "errors": 0
+    },
+    "2025-06-01": {
+      "processed": 507,
+      "likes": 345,
+      "comments": 361,
+      "errors": 8
+    },
+    "2025-06-04": {
+      "processed": 770,
+      "likes": 631,
+      "comments": 582,
+      "errors": 0
+    }
+  },
+  "account_stats": {
+    "凹特慢": {
+      "processed": 296,
+      "likes": 106,
+      "comments": 139,
+      "errors": 1,
+      "last_active": "2025-06-04T12:05:56.551997"
+    },
+    "咕噜音乐": {
+      "processed": 305,
+      "likes": 148,
+      "comments": 304,
+      "errors": 0,
+      "last_active": "2025-06-04T13:06:10.868906"
+    },
+    "小姝其": {
+      "processed": 172,
+      "likes": 5,
+      "comments": 36,
+      "errors": 0,
+      "last_active": "2025-05-26T22:19:59.345856"
+    },
+    "时光像素辑": {
+      "processed": 349,
+      "likes": 201,
+      "comments": 198,
+      "errors": 0,
+      "last_active": "2025-06-04T14:07:45.120042"
+    },
+    "梦落枫叶间": {
+      "processed": 337,
+      "likes": 224,
+      "comments": 290,
+      "errors": 0,
+      "last_active": "2025-06-04T16:36:43.254102"
+    },
+    "萌侠跳跳糖": {
+      "processed": 285,
+      "likes": 182,
+      "comments": 176,
+      "errors": 0,
+      "last_active": "2025-06-04T17:44:58.550257"
+    },
+    "李晔3": {
+      "processed": 150,
+      "likes": 101,
+      "comments": 114,
+      "errors": 8,
+      "last_active": "2025-06-04T15:32:25.892251"
+    },
+    "西游冒险记": {
+      "processed": 313,
+      "likes": 162,
+      "comments": 87,
+      "errors": 0,
+      "last_active": "2025-06-04T19:32:58.493802"
+    }
+  },
+  "error_stats": {},
+  "performance_stats": {
+    "avg_processing_time": 0,
+    "success_rate": 99.59386281588448
+  },
+  "last_updated": "2025-06-04T19:32:58.493811"
+}
