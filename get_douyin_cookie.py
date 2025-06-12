@@ -1,29 +1,36 @@
 import asyncio
 import sys
+import argparse
 from pathlib import Path
 
 # 添加项目根目录到 Python 路径
-sys.path.append(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).resolve().parent))
 
-from conf import BASE_DIR
+from app.database import add_account
 from main import douyin_setup
 
-if __name__ == '__main__':
+def main():
+    parser = argparse.ArgumentParser(description="获取抖音Cookie并保存到数据库。")
+    parser.add_argument("username", help="要关联此Cookie的账户用户名。")
+    args = parser.parse_args()
+    
+    username = args.username
+    print(f"正在为账户 '{username}' 获取Cookie...")
+
     try:
-        # 确保目录存在
-        cookies_dir = BASE_DIR / "cookies" / "douyin_uploader"
-        cookies_dir.mkdir(parents=True, exist_ok=True)
+        # 重构: douyin_setup 不再需要文件路径，它将直接返回 cookie 数据
+        # 第二个参数 handle=True 保持不变，意味着它会打开浏览器让用户登录
+        cookie_data = asyncio.run(douyin_setup(headless=False, path=None, handle=True))
         
-        # 设置账号文件路径
-        account_file = cookies_dir / "account.json"
-        print(f"[DEBUG] Cookie文件将保存到: {account_file}")
-        
-        # 运行设置
-        cookie_setup = asyncio.run(douyin_setup(str(account_file), handle=True))
-        
-        if cookie_setup:
-            print("[SUCCESS] Cookie获取成功！")
+        if cookie_data:
+            # 将获取到的 cookie 保存到数据库
+            add_account(username, cookie_data)
+            print(f"[SUCCESS] 账户 '{username}' 的Cookie获取成功并已保存到数据库！")
         else:
-            print("[ERROR] Cookie获取失败！")
+            print("[ERROR]未能获取到Cookie，请重试。")
+            
     except Exception as e:
-        print(f"[ERROR] 发生错误: {str(e)}") 
+        print(f"[ERROR] 发生严重错误: {str(e)}")
+
+if __name__ == '__main__':
+    main() 

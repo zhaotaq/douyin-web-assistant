@@ -173,6 +173,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const translatedStatus = statusTranslations[statusKey] || statusKey;
                 statusText.textContent = translatedStatus;
                 
+                // 更新状态的CSS类以应用背景色
+                statusText.classList.remove('idle', 'running', 'completed', 'failed', 'stopped');
+                statusText.classList.add(statusKey);
+                
                 // 更新日志并滚动到底部
                 if (logText.textContent !== currentLog) {
                     logText.textContent = currentLog;

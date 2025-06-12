@@ -1,0 +1,162 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+好的，没有问题。针对这个项目，我为您编写了一份详细的、关于如何引入和使用SQLite数据库的开发规则。
+
+这份规则旨在确保数据库的集成工作能够有序、规范地进行，并指导如何重构现有代码以适应新的数据持久化方案。
+
+---
+
+### **项目集成SQLite开发规则**
+
+#### **1. 核心原则**
+
+1.  **单一数据源**: 一旦引入SQLite，它将成为项目**唯一**的数据存储源。所有之前使用 `.json` 和 `.txt` 文件存储的数据（包括账号、视频数据、处理记录等）都必须迁移到数据库中。
+2.  **抽象层隔离**: 所有的数据库操作（增删改查）都必须封装在一个专门的数据库管理模块中（例如 `app/database.py`）。项目的其他部分（如 `automator.py`, `routes.py`）**不应**直接编写SQL语句，而应调用这个管理模块提供的接口。
+3.  **数据迁移**: 需要编写一个一次性脚本，用于将所有旧的 `.json` 和 `.txt` 文件中的数据读取并插入到新的SQLite数据库中，确保平滑过渡。
+
+#### **2. 数据库设计 (`database.db`)**
+
+建议在项目根目录创建一个名为 `database.db` 的SQLite文件。数据库应包含以下几张核心表：
+
+##### **`accounts` (账号表)**
+* **用途**: 替代 `cookies/douyin_uploader/accounts/` 目录下的所有JSON文件。
+* **表结构**:
+    ```sql
+    CREATE TABLE IF NOT EXISTS accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        cookies TEXT NOT NULL, -- 存储JSON格式的cookie字符串
+        status TEXT DEFAULT 'active', -- 账号状态，例如: active, expired, banned
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_login_at TIMESTAMP
+    );
+    ```
+
+##### **`videos` (视频数据表)**
+* **用途**: 替代 `cookies/douyin_uploader/video_data/` 目录下的所有视频数据JSON文件。
+* **表结构**:
+    ```sql
+    CREATE TABLE IF NOT EXISTS videos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id INTEGER NOT NULL,
+        file_path TEXT NOT NULL,
+        title TEXT,
+        publish_time TIMESTAMP,
+        likes INTEGER DEFAULT 0,
+        comments INTEGER DEFAULT 0,
+        shares INTEGER DEFAULT 0,
+        views INTEGER DEFAULT 0,
+        last_updated_at TIMESTAMP,
+        FOREIGN KEY (account_id) REFERENCES accounts (id)
+    );
+    ```
+
+##### **`interaction_log` (互动日志表)**
+* **用途**: 替代 `processed_videos/` 目录下的所有txt处理记录。
+* **表结构**:
+    ```sql
+    CREATE TABLE IF NOT EXISTS interaction_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id INTEGER NOT NULL,
+        video_url TEXT NOT NULL, -- 被操作的视频URL
+        action_type TEXT NOT NULL, -- 例如: 'like', 'comment', 'follow'
+        action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(account_id, video_url, action_type), -- 同一账号对同一视频只能点赞/关注一次
+        FOREIGN KEY (account_id) REFERENCES accounts (id)
+    );
+    ```
+
+##### **`content_pools` (内容池表)**
+* **用途**: 替代 `comments_pool.txt` 和 `homepage_urls.txt`。
+* **表结构**:
+    ```sql
+    CREATE TABLE IF NOT EXISTS content_pools (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pool_type TEXT NOT NULL, -- 'comment' 或 'homepage_url'
+        content TEXT NOT NULL,
+        is_active BOOLEAN DEFAULT TRUE
+    );
+    ```
+
+#### **3. 数据库管理模块 (`app/database.py`)**
+
+* **目标**: 创建一个新的文件 `app/database.py`，用于封装所有数据库交互。
+* **建议实现的函数**:
+
+    ```python
+    # app/database.py
+
+    import sqlite3
+    import json
+
+    DB_PATH = 'database.db'
+
+    def get_db_connection():
+        """获取数据库连接"""
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row # 让查询结果可以像字典一样访问
+        return conn
+
+    def init_db():
+        """初始化数据库，创建所有表"""
+        # 在此实现上述CREATE TABLE语句
+        pass
+
+    # --- Account Functions ---
+    def add_account(username, cookies_dict):
+        # ...
+        pass
+
+    def get_account(username):
+        # ...
+        pass
+    
+    def get_all_accounts():
+        # ...
+        pass
+
+    # --- Video Functions ---
+    def add_or_update_video(account_id, video_data):
+        # ...
+        pass
+    
+    def get_videos_by_account(account_id):
+        # ...
+        pass
+
+    # --- Interaction Log Functions ---
+    def log_interaction(account_id, video_url, action_type):
+        # ...
+        pass
+
+    def has_interacted(account_id, video_url, action_type):
+        # ...
+        pass
+        
+    # --- Content Pool Functions ---
+    def get_random_comment():
+        # ...
+        pass
+    ```
+
+#### **4. 代码重构指南**
+
+* **`get_douyin_cookie.py` 和 `account_manager.py`**:
+    * 修改这两个文件，当获取到新的cookie或添加新账号时，不再是写入JSON文件，而是调用 `database.add_account()` 函数。
+
+* **`app/services/automator.py`**:
+    * **移除所有文件IO操作**: 搜索代码中所有的 `open()`, `json.load()`, `json.dump()`, `os.path.exists()` 等操作，并将其替换为对 `app/database.py` 中相应函数的调用。
+    * **加载账号**: `_get_accounts()` 方法应改为调用 `database.get_all_accounts()`。
+    * **更新视频数据**: `_update_videos_data()` 方法应改为从数据库获取视频信息，并在更新后调用 `database.add_or_update_video()`。
+    * **检查重复互动**: `_is_video_processed()` 方法应改为调用 `database.has_interacted()`。
+    * **记录互动**: 在点赞、评论等操作成功后，应调用 `database.log_interaction()`。
+
+* **`app/api/routes.py`**:
+    * API端点的数据来源应全部切换为数据库。例如，`/api/accounts` 应该通过调用 `database.get_all_accounts()` 来获取数据，而不是扫描文件目录。
+    * 前端发送来的数据，也应通过调用数据库管理模块的函数来持久化。
+
+
+---

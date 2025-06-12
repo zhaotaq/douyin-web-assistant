@@ -8,6 +8,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from app.database import get_random_content, get_account, has_interacted, log_interaction
 
 # 这是一个简单的内存状态管理器，用于在Web请求之间共享任务状态。
 # 在生产环境中，可能会使用更健壮的方案，如Redis或数据库。
@@ -23,31 +24,27 @@ class AutomationService:
 
     def __init__(self, urls, account, stop_event):
         self.urls = urls
-        self.account = account # 保存账户名
+        self.account_name = account # 保存账户名
         self.stop_event = stop_event
         self.driver = None
-        self.processed_videos = set() # 存放在本次任务中处理过的视频ID
-        # 评论池
-        self.comments_pool = self._load_comments()
+        
+        # 从数据库获取账户信息
+        account_data = get_account(self.account_name)
+        if not account_data:
+            raise ValueError(f"无法在数据库中找到账户: {self.account_name}")
+        self.account_id = account_data['id']
+        self.cookies = json.loads(account_data['cookies']) # 解析cookie
 
-    def _load_comments(self):
-        """加载评论池文件"""
-        project_root = Path(__file__).parent.parent.parent
-        comments_file = project_root / "comments_pool.txt"
-        if not comments_file.exists():
-            self._update_log("警告: comments_pool.txt 文件不存在，将无法执行评论操作。")
-            return []
-        with open(comments_file, 'r', encoding='utf-8') as f:
-            # 过滤掉空行和注释行
-            comments = [line.strip() for line in f if line.strip() and not line.startswith('#')]
-        self._update_log(f"成功加载 {len(comments)} 条评论。")
-        return comments
+        # self.processed_videos = set() # 不再需要，将通过数据库检查
+        # self.comments_pool = self._load_comments() # 不再需要，将从数据库实时获取
 
     def _get_random_comment(self) -> str:
-        """从评论池中随机获取一条评论"""
-        if not self.comments_pool:
+        """从数据库中随机获取一条评论"""
+        comment = get_random_content('comment')
+        if not comment:
+            self._update_log("警告: 数据库评论池为空。")
             return ""
-        return random.choice(self.comments_pool)
+        return comment
     
     def _update_log(self, message):
         """更新任务日志并打印到控制台"""
@@ -68,37 +65,29 @@ class AutomationService:
         self._update_log("浏览器驱动初始化完成。")
 
     def _load_cookies(self):
-        """根据 self.account 加载对应的cookie文件"""
-        self._update_log(f"正在为账户 '{self.account}' 加载Cookie...")
+        """将 self.cookies 加载到浏览器实例中"""
+        self._update_log(f"正在为账户 '{self.account_name}' 从数据库加载Cookie...")
 
-        project_root = Path(__file__).parent.parent.parent
-        # 规约修正: 直接从cookies目录下加载以账户名命名的文件
-        cookie_file = project_root / "cookies" / f"{self.account}.json"
-        
-        if not cookie_file.exists():
-            self._update_log(f"错误：Cookie文件不存在于: {cookie_file}")
-            raise FileNotFoundError(f"未找到指定的Cookie文件！路径: {cookie_file}")
-
-        with open(cookie_file, 'r', encoding='utf-8') as f:
-            cookies_to_load = json.load(f)
-        
-        # 规约: Cookie格式现在是用户直接提交的，应该是标准的列表格式
-        if not isinstance(cookies_to_load, list):
-            raise TypeError(f"Cookie文件 '{self.account}.json' 的格式不正确，应为一个JSON数组。")
+        if not isinstance(self.cookies, list):
+            raise TypeError(f"账户 '{self.account_name}' 的Cookie格式不正确，应为一个JSON数组。")
 
         # 需要先访问一下域名，才能设置cookie
         self.driver.get("https://www.douyin.com/")
         
         valid_cookies_added = 0
-        for cookie in cookies_to_load:
+        for cookie in self.cookies:
+            # 基本的cookie格式验证
             if 'name' not in cookie or 'value' not in cookie:
                 continue
+            # 确保cookie属于抖音域
             if 'domain' in cookie and '.douyin.com' not in cookie['domain']:
                  continue
             
+            # Selenium的 add_cookie 不接受 'sameSite' 为非标准值
+            if 'sameSite' in cookie and cookie['sameSite'] not in ['Strict', 'Lax', 'None']:
+                del cookie['sameSite']
+            
             try:
-                if 'sameSite' in cookie and cookie['sameSite'] not in ['Strict', 'Lax', 'None']:
-                    del cookie['sameSite']
                 self.driver.add_cookie(cookie)
                 valid_cookies_added += 1
             except Exception as e:
@@ -107,9 +96,9 @@ class AutomationService:
         if valid_cookies_added == 0:
             raise Exception("未能加载任何有效的抖音域Cookie。")
 
-        self._update_log(f"成功加载 {valid_cookies_added} 个有效Cookie。正在刷新...")
+        self._update_log(f"成功加载 {valid_cookies_added} 个有效Cookie。正在刷新页面...")
         self.driver.refresh()
-        time.sleep(5)
+        time.sleep(5) # 等待页面刷新和状态同步
 
     def run(self):
         """执行自动化任务的主函数"""
@@ -141,12 +130,7 @@ class AutomationService:
                     if self.stop_event.is_set():
                         break
                     
-                    video_id = video_url.split("/")[-1]
-                    if video_id not in self.processed_videos:
-                        self._process_video(video_url)
-                        self.processed_videos.add(video_id)
-                    else:
-                        self._update_log(f"视频 {video_id} 已处理过，跳过。")
+                    self._process_video(video_url)
             
             if not self.stop_event.is_set():
                  task_state['status'] = 'completed'
@@ -180,71 +164,81 @@ class AutomationService:
         time.sleep(random.uniform(3, 5)) # 等待视频页面加载
 
         # --- 点赞 ---
-        self._handle_like()
+        self._handle_like(video_url)
         
+        if self.stop_event.is_set(): return
+
         # --- 评论 ---
-        self._handle_comment()
+        self._handle_comment(video_url)
 
         self._update_log(f"--- 视频处理完成: {video_url} ---\n")
 
-    def _handle_like(self):
-        """处理点赞逻辑"""
+    def _handle_like(self, video_url):
+        """处理点赞逻辑，包含数据库检查和记录"""
+        # 检查是否已经点赞过
+        if has_interacted(self.account_id, video_url, 'like'):
+            self._update_log("✅ 此视频已在数据库中标记为已点赞，跳过。")
+            return
+
         try:
             # 使用更稳定的 data-e2e 属性来定位点赞按钮的容器
             like_container = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='video-player-container'] [data-e2e='like-icon-container']"))
             )
             
-            # 检查是否已点赞 (已点赞的按钮通常会有一个值为"true"的 'aria-pressed' 属性)
+            # 检查页面上是否已点赞
             like_button = like_container.find_element(By.TAG_NAME, "div")
-            is_liked = like_button.get_attribute('aria-pressed') == 'true'
+            is_liked_on_page = like_button.get_attribute('aria-pressed') == 'true'
             
-            if not is_liked:
+            if not is_liked_on_page:
                 self._update_log("视频未点赞，准备执行点赞操作...")
-                # 模拟鼠标悬停
                 webdriver.ActionChains(self.driver).move_to_element(like_button).perform()
                 time.sleep(random.uniform(0.5, 1))
                 like_button.click()
-                self._update_log("👍 点赞成功！")
+                self._update_log("👍 点赞成功！正在记录到数据库...")
+                log_interaction(self.account_id, video_url, 'like')
+                self._update_log("记录成功。")
                 time.sleep(random.uniform(1, 2))
             else:
-                self._update_log("✅ 视频已经点过赞，跳过。")
+                self._update_log("✅ 页面显示已点赞，同步状态到数据库。")
+                log_interaction(self.account_id, video_url, 'like')
 
         except Exception as e:
             self._update_log(f"⚠️ 点赞操作失败: {e}")
 
-    def _handle_comment(self):
-        """处理评论逻辑"""
-        if not self.comments_pool:
-            self._update_log("💬 评论池为空，跳过评论。")
+    def _handle_comment(self, video_url):
+        """处理评论逻辑，包含数据库检查和记录"""
+        # 检查是否已经评论过
+        if has_interacted(self.account_id, video_url, 'comment'):
+            self._update_log("✅ 此视频已在数据库中标记为已评论，跳过。")
+            return
+
+        comment_text = self._get_random_comment()
+        if not comment_text:
+            self._update_log("💬 未从数据库获取到评论内容，跳过评论。")
             return
         
         try:
-            comment_text = self._get_random_comment()
-            if not comment_text:
-                self._update_log("未获取到评论内容，跳过。")
-                return
-
             self._update_log(f"准备发表评论: '{comment_text}'")
 
             # 定位评论输入框
             comment_input = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='comment-input']"))
             )
-            comment_input.click() # 点击以激活输入框
+            comment_input.click()
             time.sleep(random.uniform(1, 2))
 
-            # 模拟真人打字
             for char in comment_text:
                 comment_input.send_keys(char)
                 time.sleep(random.uniform(0.1, 0.3))
             
-            # 定位并点击发送按钮
             post_button = WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "div[data-e2e='comment-post-button']"))
             )
             post_button.click()
-            self._update_log("💬 评论发表成功！")
+            self._update_log("💬 评论发表成功！正在记录到数据库...")
+            log_interaction(self.account_id, video_url, 'comment')
+            self._update_log("记录成功。")
             time.sleep(random.uniform(2, 3))
 
         except Exception as e:

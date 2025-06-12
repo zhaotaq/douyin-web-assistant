@@ -1,0 +1,57 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+ 
+### **前端开发规则 (Markdown格式)**
+
+#### **1. 核心原则**
+
+* **保持轻量**: 延续项目当前的技术选型，不引入新的大型前端框架（如Vue, React, jQuery等）。
+* **代码分离**: 严格保持HTML、CSS和JavaScript文件的分离，不要在HTML文件中编写内联的CSS或JavaScript。
+* **风格统一**: 所有新增的UI元素和交互逻辑都必须与现有界面风格保持一致。
+
+#### **2. HTML (`index.html`)**
+
+* **单一页面结构**:
+    * 项目为单页应用（SPA），所有新的UI内容都应在 `index.html` 的现有`<div class="container">`内进行动态添加或修改，而不是创建新的HTML文件。
+* **语义化标签**:
+    * 使用符合语义的HTML5标签（如 `<header>`, `<main>`, `<section>`, `<footer>` 等）来组织页面结构，增强代码的可读性和可访问性。
+* **ID和类名**:
+    * ID（`id`）应用于唯一的、需要通过JavaScript直接操作的元素（如 `account-list`, `video-list`）。
+    * 类名（`class`）应用于可复用的组件样式（如 `btn`, `card`, `modal`）。类名应使用小写字母和连字符（kebab-case），例如 `video-item`。
+
+#### **3. CSS (`app/static/css/main.css`)**
+
+* **样式文件**:
+    * 所有样式规则必须定义在 `app/static/css/main.css` 文件中。
+* **复用现有样式**:
+    * 在创建新元素时，优先复用文件中已定义的通用类，如 `.btn`（按钮）、`.card`（卡片）、`.tag`（标签）等。
+* **命名规范**:
+    * 遵循BEM（Block, Element, Modifier）思想或类似的命名约定，确保选择器的清晰和低耦合。例如：`.video-list`, `.video-list__item`, `.video-list__item--active`。
+* **视觉一致性**:
+    * **颜色**: 严格使用已定义的颜色变量或颜色代码，保持与主色调（深灰、白色、绿色）的一致性。
+    * **字体**: 保持现有字体设置 (`'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`)。
+    * **间距**: 组件间的外边距（`margin`）和内边距（`padding`）应参考现有组件，保持视觉上的和谐统一。
+
+#### **4. JavaScript (`app/static/js/main.js`)**
+
+* **保持原生**:
+    * 所有前端逻辑代码必须使用 **Vanilla JavaScript (ES6+)** 编写，以维持项目的轻量和纯粹。
+* **API通信**:
+    * 所有与后端的通信必须通过原生的 `fetch` API 完成。
+    * 请求后端API的URL必须以 `/api/` 开头。
+    * 对 `fetch` 的调用应封装在专门的函数中，并妥善处理 `Promise` 的 `resolve` 和 `reject` 状态，包括网络错误和服务器错误。
+* **DOM操作**:
+    * 将DOM元素的获取集中在代码的起始部分或专门的初始化函数中。
+    * DOM的更新和渲染逻辑应封装在独立的函数内，函数命名应清晰地描述其功能，例如 `renderVideoList(videos)`。
+* **事件处理**:
+    * 使用 `document.addEventListener('DOMContentLoaded', ...)` 来确保在DOM完全加载后再执行脚本。
+    * 使用 `element.addEventListener('click', ...)` 的方式绑定事件，并采用事件委托来优化性能，尤其是在处理列表等动态生成的元素时。
+* **代码组织**:
+    * 将相关的函数组织在一起。例如，所有与账号操作相关的函数放在一起，所有与视频列表相关的函数放在一起。
+    * 为主要函数和复杂逻辑块添加清晰的JSDoc注释，说明函数的功能、参数和返回值。
+
+
+ 

@@ -3,4 +3,3 @@ Flask-Cors
 selenium
 webdriver-manager
 undetected-chromedriver
-pygame
