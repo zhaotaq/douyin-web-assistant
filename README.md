@@ -1,264 +1,155 @@
-# 🤖 全自动抖音管理器使用说明
+# 抖音Web助手 (Douyin Web Assistant)
 
-## 🎯 功能概述
+这是一个基于Web的抖音自动化工具，旨在简化和自动化常见的抖音网页版操作，如批量点赞和评论。它通过一个简洁的Web界面和一套RESTful API来控制，将复杂的Selenium操作封装在后台服务中。
 
-这是一个全自动化的抖音点赞评论系统，支持：
-- **多账户轮流工作**，每个账户独立处理视频记录
-- 批量处理多个主页
-- **智能账户分离**：每个账户都能处理相同视频，但不会重复处理
-- 智能评论检测，避免重复评论
-- 随机等待时间，模拟真实用户行为
+## ✨ 功能特性
 
-## 📁 文件结构
+- **Web用户界面**: 提供一个简单的SPA (`index.html`)，用于发起任务、查看状态和管理账户。
+- **RESTful API**: 设计清晰的API端点，方便与其他程序集成。
+- **后台任务**: 自动化任务在独立的后台线程中运行，不会阻塞API服务。
+- **状态监控**: 可随时通过API查询当前自动化任务的运行状态（如 `运行中`, `已完成`, `失败`）。
+- **多账户支持**: 通过在 `cookies/` 目录下放置不同的Cookie文件来轻松切换和管理多个账户。
+- **智能操作**:
+  - 自动点赞和评论指定用户主页下的视频。
+  - 从 `comments_pool.txt` 文件中随机选择评论内容，模拟真人行为。
+  - 对已处理过的视频进行记录，避免重复操作。
+- **可扩展性**: 清晰的分层架构（API、服务、前端），易于未来扩展新功能。
 
-```
-📦 项目目录
-├── 🐍 auto_manager.py        # 全自动管理器主程序
-├── 📝 homepage_urls.txt      # 主页地址库
-├── 📁 processed_videos/      # 已处理视频记录目录
-│   ├── 账户A_processed.txt   # 账户A的已处理记录
-│   ├── 账户B_processed.txt   # 账户B的已处理记录
-│   └── ...                   # 其他账户的记录
-├── 💬 comments_pool.txt      # 评论内容库
-├── 📚 account_manager.py     # 账户管理器
-└── 📖 README_AUTO.md         # 本说明文档
-```
+## 🏛️ 项目架构
 
-## 🚀 使用步骤
+项目采用经典的三层架构，实现了前后端分离：
 
-### 1. 准备工作
+1.  **前端 (Browser)**: 一个静态的单页面应用 (`app/static/index.html`)，使用原生JavaScript和Fetch API与后端通信。
+2.  **后端 (Flask API Server)**: 一个Python Flask应用，提供RESTful API来接收前端指令，并管理自动化任务的生命周期。
+3.  **自动化服务 (Selenium)**: 核心的自动化逻辑，使用Selenium库来控制一个真实的浏览器实例，执行具体的网页操作。
 
-#### 1.1 添加账户
-```bash
-python account_manager.py
-```
-选择"2. 添加新账户"，添加至少2个抖音账户
-
-#### 1.2 配置主页地址库
-编辑 `homepage_urls.txt` 文件，添加要处理的抖音用户主页：
-
-```txt
-# 示例：
-https://www.douyin.com/user/MS4wLjABAAAA用户ID1
-https://www.douyin.com/user/MS4wLjABAAAA用户ID2
-https://www.douyin.com/user/MS4wLjABAAAA用户ID3
-```
-
-#### 1.3 配置评论库
-编辑 `comments_pool.txt` 文件，添加评论内容：
-
-```txt
-太棒了！
-支持一下！
-好视频！
-点赞支持！
-内容很精彩
-学到了很多
-继续加油
-```
-
-### 2. 启动自动化
-
-```bash
-python auto_manager.py
-```
-
-### 3. 功能菜单
+## 📁 项目结构
 
 ```
-=== 🤖 全自动抖音管理器 ===
-1. 查看配置状态                    # 查看账户、主页、已处理视频数量
-2. 管理主页地址库                  # 编辑主页地址
-3. 管理评论库                      # 编辑评论内容
-4. 查看已处理视频                  # 查看处理历史总览
-5. 开始自动化运行                  # 无限循环运行
-6. 开始自动化运行（限制循环次数）    # 指定循环次数
-7. 清空已处理视频记录              # 重置处理历史
-8. 查看各账户处理状态              # 📊 NEW! 查看每个账户的详细状态
-0. 退出
+douyin-web-assistant/
+├── app/                        # 核心应用目录
+│   ├── api/                    # API蓝图
+│   │   └── routes.py           # API路由定义
+│   ├── services/               # 业务逻辑
+│   │   └── automator.py        # 封装Selenium自动化逻辑
+│   ├── static/                 # 前端文件
+│   │   ├── css/main.css
+│   │   ├── js/main.js
+│   │   └── index.html
+│   └── __init__.py             # Flask应用工厂
+├── cookies/                    # 存放用户Cookie文件
+│   └── 你的账户名1.json
+│   └── 你的账户名2.json
+├── tests/                      # Pytest测试目录
+├── comments_pool.txt           # 评论池文件
+├── requirements.txt            # Python依赖
+├── run.py                      # 应用启动脚本
+└── README.md                   # 本文档
 ```
 
-## 🔄 工作流程
+## 🚀 快速开始
 
-### 自动化循环流程：
+### 1. 环境准备
 
-```
-🔄 循环开始
-├── 📍 主页1
-│   ├── 👤 账户A → 检查A的记录 → 处理未处理视频 → 更新A的记录
-│   ├── 👤 账户B → 检查B的记录 → 处理未处理视频 → 更新B的记录  
-│   └── ⏳ 账户间等待 10-30秒
-├── 📍 主页2  
-│   ├── 👤 账户A → 检查A的记录 → 处理未处理视频 → 更新A的记录
-│   ├── 👤 账户B → 检查B的记录 → 处理未处理视频 → 更新B的记录
-│   └── ⏳ 主页间等待 30-60秒
-└── ⏳ 循环间隔等待 5-10分钟
-```
+- 安装 [Python 3.8+](https://www.python.org/downloads/)
+- 安装 [Google Chrome](https://www.google.com/chrome/) 浏览器
+- 安装 [ChromeDriver](https://googlechromelabs.github.io/chrome-for-testing/) 并确保其路径在系统的 `PATH` 环境变量中。**重要提示**: ChromeDriver的版本必须与你的Chrome浏览器版本完全匹配。
 
-### 🔥 **核心特性：账户分离**
+### 2. 安装
 
-**每个账户都能处理相同的视频，但不会重复处理：**
+1.  **克隆仓库**
+    ```bash
+    git clone https://github.com/your-username/douyin-web-assistant.git
+    cd douyin-web-assistant
+    ```
 
-```
-📹 视频1: "精彩内容"
-├── 👤 账户A: ✅ 点赞 + 评论 → 记录到 账户A_processed.txt
-├── 👤 账户B: ✅ 点赞 + 评论 → 记录到 账户B_processed.txt
-└── 👤 账户C: ✅ 点赞 + 评论 → 记录到 账户C_processed.txt
+2.  **安装依赖**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-下次运行时：
-├── 👤 账户A: ❌ 已处理，跳过
-├── 👤 账户B: ❌ 已处理，跳过
-└── 👤 账户C: ❌ 已处理，跳过
-```
+### 3. 配置
 
-### 智能去重机制：
+1.  **添加账户Cookie**
+    - 在项目根目录下创建一个 `cookies` 文件夹。
+    - 使用浏览器插件（如 [EditThisCookie](https://chromewebstore.google.com/detail/editthiscookie/fngmhnnpilhplaeedifhccceomclgfbg)）导出你登录抖音后的Cookie。
+    - 将导出的Cookie保存为JSON格式的文件，并将其命名为 `你的账户名.json`（例如 `my_account.json`），然后放入 `cookies` 文件夹。
+    - 文件名（不含`.json`后缀）将被视为账户名在前端展示。
 
-1. **账户级视频去重**：每个账户不会重复处理同一视频
-2. **评论去重**：通过头像匹配检测是否已评论
-3. **点赞去重**：检测点赞状态，避免重复点赞
+2.  **配置评论内容**
+    - 编辑根目录下的 `comments_pool.txt` 文件。
+    - 每行添加一条你希望发布的评论。脚本会自动忽略空行和以 `#` 开头的行。
 
-## ⚙️ 配置选项
+### 4. 运行
 
-### 等待时间设置（可在代码中调整）：
+1.  **启动后端服务**
+    ```bash
+    python run.py
+    ```
+    服务将默认在 `http://127.0.0.1:5000` 上运行。
 
-```python
-# 视频间等待时间
-wait_time = random.randint(3, 8)  # 3-8秒
+2.  **打开前端页面**
+    - 在你的浏览器中，直接打开 `app/static/index.html` 文件。
+    - 你也可以通过访问 `http://127.0.0.1:5000/static/index.html` 来加载页面。
 
-# 账户切换等待时间  
-wait_time = random.randint(10, 30)  # 10-30秒
+    > **注意**: 浏览器可能会有安全限制，推荐通过访问Flask服务地址来加载页面，以避免潜在的CORS问题。
 
-# 主页切换等待时间
-wait_time = random.randint(30, 60)  # 30-60秒
+## 📋 API 接口说明
 
-# 循环间隔等待时间
-wait_time = random.randint(300, 600)  # 5-10分钟
-```
+所有API都以 `/api` 为前缀。
 
-### 滚动设置：
+#### `GET /api/status`
+- **描述**: 获取当前自动化任务的状态。
+- **响应**:
+  ```json
+  {
+    "code": 0, "message": "Success",
+    "data": {
+      "status": "idle" | "running" | "completed" | "failed" | "stopped",
+      "log": "最新的日志信息"
+    }
+  }
+  ```
 
-```python
-# 主页滚动次数（加载更多视频）
-scroll_attempts = 5
+#### `GET /api/accounts`
+- **描述**: 获取 `cookies/` 目录下所有可用的账户列表。
+- **响应**:
+  ```json
+  {
+    "code": 0, "message": "Success",
+    "data": {
+      "count": 2,
+      "accounts": ["你的账户名1", "你的账户名2"]
+    }
+  }
+  ```
 
-# 评论区滚动次数（检测重复评论）
-for i in range(3):
-    await page.keyboard.press('PageDown')
-```
+#### `POST /api/run_task`
+- **描述**: 启动一个新的自动化任务。
+- **请求体**:
+  ```json
+  {
+    "urls": ["https://www.douyin.com/user/...", "https://www.douyin.com/user/..."],
+    "account": "你的账户名1"
+  }
+  ```
+- **响应 (202 Accepted)**:
+  ```json
+  { "code": 0, "message": "Task accepted and started in the background." }
+  ```
 
-## 📊 运行状态监控
+#### `POST /api/stop_task`
+- **描述**: 请求停止当前正在运行的任务。
+- **响应**:
+  ```json
+  { "code": 0, "message": "Stop signal sent. The task will terminate shortly." }
+  ```
 
-程序运行时会显示详细的状态信息：
+## 🤝 如何贡献
 
-```
-🔄 第 1 轮循环开始
+我们欢迎任何形式的贡献！请遵循标准的GitHub Flow：
 
-📍 处理主页 1/2: https://www.douyin.com/user/xxx
-
-👤 使用账户 1/2: 账户A
-📝 该账户已处理视频数量: 0
-🔄 账户【账户A】开始处理主页: https://www.douyin.com/user/xxx
-  📜 滚动页面 (1/5)...
-  📊 找到 15 个视频，其中 15 个未被当前账户处理
-
-  🎯 处理视频 1/15: 视频标题...
-    链接: https://www.douyin.com/video/xxx
-    👍 尝试点赞...
-    ✅ 点赞成功
-    💬 检查评论状态...
-    💬 发表新评论...
-    ✅ 评论成功: 太棒了！
-    ⏳ 等待 5 秒...
-
-👤 使用账户 2/2: 账户B  
-📝 该账户已处理视频数量: 0
-🔄 账户【账户B】开始处理主页: https://www.douyin.com/user/xxx
-  📊 找到 15 个视频，其中 15 个未被当前账户处理
-  (账户B会处理相同的视频，因为它有独立的记录)
-```
-
-## 🛡️ 安全特性
-
-1. **随机等待**：模拟真实用户行为
-2. **账户分离**：避免全局重复检测异常
-3. **重复检测**：避免重复操作被发现
-4. **验证码处理**：自动暂停等待手动处理
-5. **错误恢复**：单个视频失败不影响整体流程
-6. **优雅停止**：Ctrl+C 安全停止
-
-## 🔧 故障排除
-
-### 常见问题：
-
-1. **没有找到视频**
-   - 检查主页链接是否正确
-   - 确认页面结构是否发生变化
-
-2. **无法点赞/评论**
-   - 检查账户是否正常登录
-   - 确认没有被限制操作
-
-3. **重复评论问题**
-   - 检查头像匹配逻辑
-   - 确认评论区滚动是否正常
-
-4. **账户记录混乱**
-   - 使用选项8查看各账户状态
-   - 必要时清空重置记录
-
-### 调试模式：
-
-设置 `headless=True` 可以隐藏浏览器窗口：
-
-```python
-browser = await p.chromium.launch(headless=True)  # 后台运行
-```
-
-## 📈 性能优化建议
-
-1. **合理设置循环次数**：避免长时间连续运行
-2. **增加等待时间**：降低被检测风险
-3. **定期清理记录**：使用选项7清空记录重新开始
-4. **监控账户状态**：使用选项8查看各账户处理情况
-
-## ⚠️ 注意事项
-
-1. 请遵守抖音的使用条款和社区规范
-2. 适度使用，避免被平台检测为异常行为
-3. 定期检查账户状态，确保正常运行
-4. 备份重要配置文件
-5. 请勿用于恶意刷量或其他违规行为
-
-## 🆘 技术支持
-
-如有问题，请检查：
-1. Python环境是否正确安装
-2. 依赖库是否完整（playwright等）
-3. 网络连接是否正常
-4. 抖音页面结构是否发生变化
-
-## 🎯 使用场景示例
-
-### 场景1：多账户同时为UP主助力
-```
-目标：让3个账户都为某个UP主的视频点赞评论
-
-配置：
-- homepage_urls.txt 添加UP主链接
-- 3个账户轮流处理
-- 每个账户都会处理所有视频
-
-结果：每个视频获得3个点赞+3条评论
-```
-
-### 场景2：持续关注多个UP主
-```
-目标：定期为多个关注的UP主点赞评论
-
-配置：
-- homepage_urls.txt 添加多个UP主链接  
-- 设置循环运行
-- 每轮循环间隔5-10分钟
-
-结果：持续为新发布的视频点赞评论
-``` 
+1.  为你的功能或修复创建一个 [Issue](https://github.com/your-username/douyin-web-assistant/issues)。
+2.  从 `develop` 分支创建一个新的特性分支 (`feature/<issue_no>-description`)。
+3.  完成开发和测试后，提交一个 [Pull Request](https://github.com/your-username/douyin-web-assistant/pulls) 到 `develop` 分支。
+4.  确保你的代码遵循项目规范，并通过所有测试。

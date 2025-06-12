@@ -2,6 +2,7 @@ import threading
 import time
 import json
 import os
+import random
 from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -26,7 +27,28 @@ class AutomationService:
         self.stop_event = stop_event
         self.driver = None
         self.processed_videos = set() # 存放在本次任务中处理过的视频ID
+        # 评论池
+        self.comments_pool = self._load_comments()
 
+    def _load_comments(self):
+        """加载评论池文件"""
+        project_root = Path(__file__).parent.parent.parent
+        comments_file = project_root / "comments_pool.txt"
+        if not comments_file.exists():
+            self._update_log("警告: comments_pool.txt 文件不存在，将无法执行评论操作。")
+            return []
+        with open(comments_file, 'r', encoding='utf-8') as f:
+            # 过滤掉空行和注释行
+            comments = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+        self._update_log(f"成功加载 {len(comments)} 条评论。")
+        return comments
+
+    def _get_random_comment(self) -> str:
+        """从评论池中随机获取一条评论"""
+        if not self.comments_pool:
+            return ""
+        return random.choice(self.comments_pool)
+    
     def _update_log(self, message):
         """更新任务日志并打印到控制台"""
         print(message)
@@ -50,8 +72,8 @@ class AutomationService:
         self._update_log(f"正在为账户 '{self.account}' 加载Cookie...")
 
         project_root = Path(__file__).parent.parent.parent
-        # 使用传入的账户名动态构建文件名，并确保扩展名为 .json
-        cookie_file = project_root / "cookies" / "douyin_uploader" / "accounts" / f"{self.account}.json"
+        # 规约修正: 直接从cookies目录下加载以账户名命名的文件
+        cookie_file = project_root / "cookies" / f"{self.account}.json"
         
         if not cookie_file.exists():
             self._update_log(f"错误：Cookie文件不存在于: {cookie_file}")
@@ -110,11 +132,12 @@ class AutomationService:
 
                 # 找到所有视频链接
                 video_elements = self.driver.find_elements(By.CSS_SELECTOR, 'a[href*="/video/"]')
-                video_urls = [el.get_attribute('href') for el in video_elements if el.get_attribute('href')]
+                # 使用字典去重，保持顺序
+                unique_video_urls = list(dict.fromkeys([el.get_attribute('href') for el in video_elements if el.get_attribute('href')]))
 
-                self._update_log(f"在主页上发现了 {len(video_urls)} 个视频。")
+                self._update_log(f"在主页上发现了 {len(unique_video_urls)} 个视频。")
 
-                for video_url in video_urls:
+                for video_url in unique_video_urls:
                     if self.stop_event.is_set():
                         break
                     
@@ -145,45 +168,87 @@ class AutomationService:
         scroll_pause_time = 2
         scrolls = 3  # 滚动3次
         for i in range(scrolls):
+            if self.stop_event.is_set(): break
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(scroll_pause_time)
-            if self.stop_event.is_set(): break
+            self._update_log(f"完成第 {i+1}/{scrolls} 次滚动。")
 
     def _process_video(self, video_url):
         """处理单个视频：点赞和评论"""
-        self._update_log(f"正在处理视频: {video_url}")
+        self._update_log(f"--- 开始处理视频: {video_url} ---")
         self.driver.get(video_url)
-        time.sleep(5) # 等待视频页面加载
+        time.sleep(random.uniform(3, 5)) # 等待视频页面加载
 
         # --- 点赞 ---
+        self._handle_like()
+        
+        # --- 评论 ---
+        self._handle_comment()
+
+        self._update_log(f"--- 视频处理完成: {video_url} ---\n")
+
+    def _handle_like(self):
+        """处理点赞逻辑"""
         try:
             # 使用更稳定的 data-e2e 属性来定位点赞按钮的容器
             like_container = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "[data-e2e='video-player-container'] [data-e2e='like-icon']"))
+                EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='video-player-container'] [data-e2e='like-icon-container']"))
             )
             
-            # 检查是否已点赞 (通常已点赞的元素会有一个特定的class或aria-label)
-            # 这里我们用一个简化的方式，通过SVG的路径来判断。一个更健壮的方法是检查 'aria-label' 属性
-            is_liked = 'Ptzq3' in like_container.get_attribute('innerHTML') # 假设 'Ptzq3' 是红色爱心的某个特征
+            # 检查是否已点赞 (已点赞的按钮通常会有一个值为"true"的 'aria-pressed' 属性)
+            like_button = like_container.find_element(By.TAG_NAME, "div")
+            is_liked = like_button.get_attribute('aria-pressed') == 'true'
             
             if not is_liked:
-                 # 确保元素是可点击的
-                like_button = WebDriverWait(self.driver, 10).until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-e2e='video-player-container'] [data-e2e='like-icon']"))
-                )
+                self._update_log("视频未点赞，准备执行点赞操作...")
+                # 模拟鼠标悬停
+                webdriver.ActionChains(self.driver).move_to_element(like_button).perform()
+                time.sleep(random.uniform(0.5, 1))
                 like_button.click()
-                self._update_log("点赞成功！")
-                time.sleep(1)
+                self._update_log("👍 点赞成功！")
+                time.sleep(random.uniform(1, 2))
             else:
-                self._update_log("视频已经点过赞，跳过。")
+                self._update_log("✅ 视频已经点过赞，跳过。")
 
         except Exception as e:
-            self._update_log(f"点赞失败: {e}")
+            self._update_log(f"⚠️ 点赞操作失败: {e}")
+
+    def _handle_comment(self):
+        """处理评论逻辑"""
+        if not self.comments_pool:
+            self._update_log("💬 评论池为空，跳过评论。")
+            return
         
-        # --- 评论 ---
-        # 实际评论逻辑比较复杂，需要处理登录、输入、点击等，这里暂时只做日志记录
-        self._update_log("评论功能待实现。")
-        time.sleep(2)
+        try:
+            comment_text = self._get_random_comment()
+            if not comment_text:
+                self._update_log("未获取到评论内容，跳过。")
+                return
+
+            self._update_log(f"准备发表评论: '{comment_text}'")
+
+            # 定位评论输入框
+            comment_input = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-e2e='comment-input']"))
+            )
+            comment_input.click() # 点击以激活输入框
+            time.sleep(random.uniform(1, 2))
+
+            # 模拟真人打字
+            for char in comment_text:
+                comment_input.send_keys(char)
+                time.sleep(random.uniform(0.1, 0.3))
+            
+            # 定位并点击发送按钮
+            post_button = WebDriverWait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "div[data-e2e='comment-post-button']"))
+            )
+            post_button.click()
+            self._update_log("💬 评论发表成功！")
+            time.sleep(random.uniform(2, 3))
+
+        except Exception as e:
+            self._update_log(f"⚠️ 评论操作失败: {e}")
 
 
 def get_current_status():
@@ -221,9 +286,11 @@ def stop_task() -> bool:
     发送停止信号给当前正在运行的任务。
     """
     if not task_state.get('thread') or not task_state['thread'].is_alive():
+        task_state['log'] = "当前无任务在运行。"
         return False
     
     task_state['stop_event'].set()
+    task_state['log'] = "正在发送停止信号..."
     return True
 
 def start_automation_task(urls: list, account: str):
