@@ -19,6 +19,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const tutorialModal = document.getElementById('tutorial-modal');
     const modalCloseBtn = document.getElementById('modal-close-btn');
 
+    // Admin Panel Elements
+    const adminAccessLink = document.getElementById('admin-access-link');
+    const adminPanel = document.getElementById('admin-panel');
+    const newCommentsInput = document.getElementById('new-comments-input');
+    const saveCommentsBtn = document.getElementById('save-comments-btn');
+
+    let adminPassword = null;
+
     // --- 新功能: 更新共享池状态并控制UI锁定 ---
     function updateAccountPool() {
         fetch('/api/accounts')
@@ -204,4 +212,65 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(pollStatus, 2000); // 保持状态轮询
     // 可以降低账户池的轮询频率，因为它不那么频繁变化
     setInterval(updateAccountPool, 15000); 
+
+    // --- 新功能: 管理员入口 ---
+    adminAccessLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (adminPanel.style.display !== 'none') {
+            adminPanel.style.display = 'none';
+            return;
+        }
+
+        const password = prompt('请输入管理员密码:');
+        if (password) {
+            adminPassword = password; // Store password for the session
+            // A simple check to see if we should show the panel.
+            // The real validation is on the backend.
+            adminPanel.style.display = 'block';
+        }
+    });
+
+    // --- 新功能: 保存新评论 ---
+    saveCommentsBtn.addEventListener('click', () => {
+        if (!adminPassword) {
+            alert('请先通过管理员入口输入密码。');
+            return;
+        }
+
+        const comments = newCommentsInput.value.split('\\n').filter(c => c.trim() !== '');
+        if (comments.length === 0) {
+            alert('请输入至少一条评论。');
+            return;
+        }
+
+        saveCommentsBtn.textContent = '正在保存...';
+        saveCommentsBtn.disabled = true;
+
+        fetch('/api/add_comments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                comments: comments,
+                password: adminPassword
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.error || '发生未知错误'); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert(data.message);
+            newCommentsInput.value = ''; // Clear input on success
+        })
+        .catch(error => {
+            console.error('保存评论失败:', error);
+            alert('保存评论失败: ' + error.message);
+        })
+        .finally(() => {
+            saveCommentsBtn.textContent = '保存到评论库';
+            saveCommentsBtn.disabled = false;
+        });
+    });
 }); 

@@ -655,4 +655,29 @@ textarea#cookie-data-input {
     color: #95a5a6;
     font-size: 0.8em;
     margin-top: 1rem;
+}
+
+/* Admin Panel Styles */
+.admin-panel-container {
+    margin: 0 30px 30px; /* Match main padding */
+}
+
+.admin-panel-container .step-number {
+    background-color: #f39c12; /* Admin-specific color */
+}
+
+/* Position the admin link in the footer */
+.admin-access {
+    margin: 0 auto; /* Center it between the other two items */
+}
+
+.admin-access a {
+    font-size: 0.9em;
+    color: #7f8c8d;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.admin-access a:hover {
+    color: #34495e;
 } 

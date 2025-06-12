@@ -78,6 +78,19 @@
             </div>
         </main>
 
+        <div class="admin-panel-container card" id="admin-panel" style="display: none;">
+            <div class="step-header">
+                <span class="step-number">★</span>
+                <h2>评论库管理</h2>
+            </div>
+            <p class="description">在此处批量添加新的评论，每行一条。系统会自动过滤重复和空的条目。</p>
+            <div class="form-group">
+                <label for="new-comments-input">新评论内容 (每行一条)</label>
+                <textarea id="new-comments-input" rows="8" placeholder="例如：&#10;太棒了，支持！&#10;为你点赞！"></textarea>
+            </div>
+            <button id="save-comments-btn">保存到评论库</button>
+        </div>
+
         <footer>
             <div class="footer-content">
                 <div class="changelog">
@@ -85,6 +98,9 @@
                     <ul>
                         <li><span class="version-tag">v2.0</span> - 2024-07-28: 集成SQLite数据库，重构存储后端并优化UI。</li>
                     </ul>
+                </div>
+                <div class="admin-access">
+                    <a href="#" id="admin-access-link">管理员入口</a>
                 </div>
                 <div class="repo-link">
                     <a href="https://github.com/zhaotaq/douyin-web-assistant" target="_blank" rel="noopener noreferrer">

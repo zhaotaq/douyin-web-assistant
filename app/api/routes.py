@@ -4,9 +4,9 @@ import json
 import re
 import time
 from pathlib import Path
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from app.services import automator
-from app.database import get_all_accounts, add_account
+import database as db
 
 # 创建一个名为 'api' 的蓝图
 bp = Blueprint('api', __name__)
@@ -37,7 +37,7 @@ def run_task():
 
     # 重构: 从数据库获取账户列表
     try:
-        accounts = get_all_accounts()
+        accounts = db.get_all_accounts()
         # 仅选择状态为 'active' 的账户
         active_accounts = [acc for acc in accounts if acc['status'] == 'active']
 
@@ -113,11 +113,11 @@ def save_cookie():
 
     # 5. 保存到数据库
     try:
-        add_account(username, cookie_list_to_save)
+        db.add_account(username, cookie_list_to_save)
         return jsonify({"code": 0, "message": "Cookie已保存成功！感谢您的贡献！"}), 201
 
     except Exception as e:
-        print(f"Error saving cookie to DB: {e}")
+        current_app.logger.error(f"Error saving cookie: {e}")
         # 更具体的错误反馈
         if "UNIQUE constraint failed" in str(e):
              return jsonify({"code": 4009, "error": f"用户名 '{username}' 已存在，请稍后再试或联系管理员。"}), 409
@@ -129,7 +129,7 @@ def get_accounts():
     从数据库获取所有可用的账户列表。
     """
     try:
-        accounts_from_db = get_all_accounts()
+        accounts_from_db = db.get_all_accounts()
         # 提取用户名, 保持API响应格式一致
         account_names = [acc['username'] for acc in accounts_from_db]
 
@@ -151,5 +151,50 @@ def get_accounts():
             "count": len(unique_accounts),
             "accounts": unique_accounts
         }
+    }
+    return jsonify(response_data)
+
+@bp.route('/add_comments', methods=['POST'])
+def add_comments():
+    """接收新评论并保存到数据库，需要管理员密码。"""
+    data = request.get_json()
+    if not data:
+        return jsonify({"code": 4001, "error": "请求体不能为空"}), 400
+
+    comments = data.get('comments')
+    password = data.get('password')
+
+    # 在这里硬编码一个简单的密码，实际项目中建议从环境变量或配置文件读取
+    ADMIN_PASSWORD = "admin123"
+
+    if password != ADMIN_PASSWORD:
+        return jsonify({"code": 4031, "error": "密码错误，无权操作"}), 403
+
+    if not comments or not isinstance(comments, list):
+        return jsonify({"code": 4002, "error": "评论内容必须是一个非空列表"}), 400
+    
+    # 过滤掉空字符串
+    sanitized_comments = [c.strip() for c in comments if c.strip()]
+    if not sanitized_comments:
+        return jsonify({"code": 4003, "error": "提交的评论内容均为空"}), 400
+
+    try:
+        added_count = db.add_comments_to_pool(sanitized_comments)
+        return jsonify({
+            "code": 0, 
+            "message": f"操作成功！新增 {added_count} 条评论到评论库。",
+            "data": {"added_count": added_count}
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error adding comments: {e}")
+        return jsonify({"code": 5002, "error": "数据库操作失败"}), 500
+
+@bp.route('/status', methods=['GET'])
+def status():
+    status_info = automator.get_task_status()
+    response_data = {
+        "code": 0,
+        "message": "Success",
+        "data": status_info
     }
     return jsonify(response_data) 
