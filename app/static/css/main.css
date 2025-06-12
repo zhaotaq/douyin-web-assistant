@@ -272,11 +272,75 @@ ul#account-list li:last-child {
 
 /* Footer */
 footer {
-    text-align: center;
-    padding: 20px;
-    font-size: 12px;
-    color: #95a5a6;
     background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    padding: 20px 30px;
+    text-align: center;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    text-align: left;
+    gap: 20px;
+}
+
+.changelog {
+    flex-grow: 1;
+}
+
+.changelog h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #34495e;
+    font-size: 1em;
+    font-weight: 600;
+}
+
+.changelog ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.85em;
+    color: #555;
+}
+
+.changelog li {
+    margin-bottom: 5px;
+}
+
+.version-tag {
+    display: inline-block;
+    background-color: #3498db;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-right: 8px;
+}
+
+.repo-link a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #34495e;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 500;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.repo-link a:hover {
+    background-color: #2c3e50;
+    transform: translateY(-2px);
+    color: white; /* Prevent color change on hover */
+}
+
+.repo-link .octicon {
+    fill: currentColor;
 }
 
 #status-box {
@@ -583,6 +647,12 @@ textarea#cookie-data-input {
 }
 
 .tutorial-link {
-    font-size: 14px;
-    margin-left: 20px; /* Add some space from the button */
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.copyright {
+    color: #95a5a6;
+    font-size: 0.8em;
+    margin-top: 1rem;
 } 
