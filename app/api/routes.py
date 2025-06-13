@@ -11,70 +11,48 @@ import database as db
 # 创建一个名为 'api' 的蓝图
 bp = Blueprint('api', __name__)
 
-@bp.route('/status', methods=['GET'])
-def get_status():
-    """
-    获取自动化任务的当前状态。
-    状态由 automator 服务提供。
-    """
-    status_data = automator.get_current_status()
-    response_data = {
-        "code": 0,
-        "message": "Success",
-        "data": status_data
-    }
-    return jsonify(response_data)
-
-@bp.route('/run_task', methods=['POST'])
-def run_task():
-    """
-    启动一个新的自动化任务。
-    该接口将自动从数据库中随机选择一个可用账户来执行任务。
-    """
+@bp.route('/tasks', methods=['POST'])
+def create_task():
+    """接收新任务并将其加入队列。"""
     data = request.get_json()
-    if not data or 'urls' not in data or not data['urls']:
-        return jsonify({"code": 4001, "error": "Request body is invalid or 'urls' is empty."}), 400
+    if not data or 'urls' not in data or not isinstance(data['urls'], list) or not data['urls']:
+        return jsonify({"code": 4001, "error": "请求体必须包含一个非空的 'urls' 列表。"}), 400
+    
+    debug_mode = data.get('debug', False)
+    password = data.get('password', None)
+    
+    # 如果启用了调试模式，必须验证密码
+    if debug_mode:
+        ADMIN_PASSWORD = "admin123" # 应该与添加评论的密码一致
+        if password != ADMIN_PASSWORD:
+            return jsonify({"code": 4031, "error": "调试模式需要有效的管理员密码。"}), 403
 
-    # 重构: 从数据库获取账户列表
     try:
-        accounts = db.get_all_accounts()
-        # 仅选择状态为 'active' 的账户
-        active_accounts = [acc for acc in accounts if acc['status'] == 'active']
-
-        if not active_accounts:
-            return jsonify({"code": 4011, "error": "当前没有任何可用的活动账户来执行任务。"}), 400
-            
-        # 从活动账户中随机选择一个
-        selected_account_row = random.choice(active_accounts)
-        account_username = selected_account_row['username']
-        
-    except Exception as e:
-        print(f"Error during account selection from DB: {e}")
-        return jsonify({"code": 5003, "error": "在从数据库选择账户时发生内部错误。"}), 500
-
-    urls = data['urls']
-    
-    # automator.start_automation_thread 后续也需要重构，但目前接口参数（用户名）保持不变
-    success = automator.start_automation_thread(urls, account_username)
-    
-    if success:
+        urls = data['urls']
+        # 将调试模式标志一起存入数据库
+        task_id = db.add_task_to_queue(urls, debug_mode)
         return jsonify({
-            "code": 0, 
-            "message": f"Task accepted for account '{account_username}' and started in the background."
+            "code": 0,
+            "message": "任务已成功加入队列",
+            "data": {"task_id": task_id}
         }), 202
-    else:
-        return jsonify({"code": 4009, "error": "A task is already running."}), 409
+    except Exception as e:
+        current_app.logger.error(f"Error adding task to queue: {e}")
+        return jsonify({"code": 5001, "error": "将任务添加到队列时发生服务器错误。"}), 500
 
-@bp.route('/stop_task', methods=['POST'])
-def stop_task():
-    """
-    停止当前正在运行的自动化任务。
-    """
-    success = automator.stop_task()
-    if success:
-        return jsonify({"code": 0, "message": "Stop signal sent. The task will terminate shortly."})
-    else:
-        return jsonify({"code": 4010, "error": "No task is currently running."}), 400
+@bp.route('/status', methods=['GET'])
+def get_system_status():
+    """获取整个系统的当前状态，包括正在运行的任务和等待队列。"""
+    try:
+        status_data = db.get_system_status()
+        return jsonify({
+            "code": 0,
+            "message": "Success",
+            "data": status_data
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error getting system status: {e}")
+        return jsonify({"code": 5002, "error": "获取系统状态时发生服务器错误。"}), 500
 
 @bp.route('/save_cookie', methods=['POST'])
 def save_cookie():
@@ -189,12 +167,25 @@ def add_comments():
         current_app.logger.error(f"Error adding comments: {e}")
         return jsonify({"code": 5002, "error": "数据库操作失败"}), 500
 
-@bp.route('/status', methods=['GET'])
-def status():
-    status_info = automator.get_task_status()
-    response_data = {
-        "code": 0,
-        "message": "Success",
-        "data": status_info
-    }
-    return jsonify(response_data) 
+@bp.route('/stop_task', methods=['POST'])
+def stop_running_task():
+    """向后台工作线程发送停止信号。"""
+    try:
+        automator.stop_worker()
+        return jsonify({"code": 0, "message": "已发送停止信号。任务将在当前操作完成后安全退出。"}), 200
+    except Exception as e:
+        current_app.logger.error(f"Error sending stop signal: {e}")
+        return jsonify({"code": 5003, "error": "发送停止信号时发生错误。"}), 500
+
+@bp.route('/task/<int:task_id>', methods=['GET'])
+def get_task_details(task_id):
+    """获取特定任务的详细信息，主要用于检查最终状态。"""
+    try:
+        task = db.get_task_by_id(task_id)
+        if task:
+            return jsonify({"code": 0, "data": dict(task)})
+        else:
+            return jsonify({"code": 404, "error": "找不到指定ID的任务。"}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error getting task details for {task_id}: {e}")
+        return jsonify({"code": 500, "error": "获取任务详情时发生服务器错误。"}), 500 

@@ -680,4 +680,61 @@ textarea#cookie-data-input {
 
 .admin-access a:hover {
     color: #34495e;
+}
+
+/* New Status Panel Styles for Queue System */
+.status-box h4 {
+    margin: -15px -20px 15px;
+    padding: 10px 20px;
+    background-color: #ecf0f1;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 1em;
+    font-weight: 600;
+    color: #34495e;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-icon {
+    font-size: 1.2em;
+}
+
+#current-task-status {
+    font-weight: bold;
+    padding: 3px 10px;
+    border-radius: 15px;
+    color: #fff;
+    font-size: 0.9em;
+}
+
+/* Status-specific colors for the current task */
+#current-task-status.idle { background-color: #3498db; }
+#current-task-status.running { background-color: #f39c12; }
+#current-task-status.completed { background-color: #2ecc71; }
+#current-task-status.failed { background-color: #e74c3c; }
+
+.queue-list {
+    font-size: 0.9em;
+}
+
+.queue-list p {
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+.queue-item {
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    transition: background-color 0.3s ease;
+}
+
+.queue-item.user-task {
+    background-color: #eaf5ff;
+    border-left: 4px solid #3498db;
+    font-weight: bold;
 } 

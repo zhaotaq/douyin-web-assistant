@@ -59,17 +59,25 @@
                             <label for="url-input">抖音主页地址 (每行一个)</label>
                             <textarea id="url-input" placeholder="请每行输入一个抖音主页地址..."></textarea>
                         </div>
-                        <button id="run-btn">开始执行</button>
-                        <button id="stop-btn" class="stop-button">停止任务</button>
+                        <button id="run-task-btn">提交执行</button>
+                        <button id="stop-task-btn" class="stop-button" disabled>停止任务</button>
                         
                         <div class="status-panel">
                             <h3>任务实时状态</h3>
-                            <div class="status-box">
+                            <div class="status-box" id="current-task-box">
+                                <h4><span class="status-icon">⚙️</span> 当前任务</h4>
                                 <div class="status-line">
-                                    <p><strong>状态:</strong> <span id="status-text" class="idle">待命</span></p>
+                                    <p><strong>状态:</strong> <span id="current-task-status">空闲</span></p>
                                 </div>
-                                <div id="log-viewer" class="log-viewer">
-                                    <pre id="log-text">系统准备就绪...</pre>
+                                <div class="log-viewer">
+                                    <pre id="current-task-log">系统准备就绪，等待新任务...</pre>
+                                </div>
+                            </div>
+
+                            <div class="status-box" id="queue-box">
+                                <h4><span class="status-icon">🕒</span> 等待队列</h4>
+                                <div id="queue-list" class="queue-list">
+                                    <p>当前没有任务在等待。</p>
                                 </div>
                             </div>
                         </div>
@@ -87,6 +95,10 @@
             <div class="form-group">
                 <label for="new-comments-input">新评论内容 (每行一条)</label>
                 <textarea id="new-comments-input" rows="8" placeholder="例如：&#10;太棒了，支持！&#10;为你点赞！"></textarea>
+            </div>
+            <div class="form-group admin-options">
+                <input type="checkbox" id="debug-mode-checkbox">
+                <label for="debug-mode-checkbox">以"有头"模式运行（仅供管理员调试）</label>
             </div>
             <button id="save-comments-btn">保存到评论库</button>
         </div>
