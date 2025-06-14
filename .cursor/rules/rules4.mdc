@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 ## PART 4: TESTING & QUALITY ASSURANCE
 
@@ -47,7 +47,7 @@ def test_run_task_success(mock_start_task, client):
     mock_start_task.return_value = None
     
     # 准备要发送的JSON数据
-    urls = {"urls": ["[http://some.url](http://some.url)"]}
+    urls = {"urls": ["[http://some.url](mdc:http:/some.url)"]}
     # 使用测试客户端发送POST请求
     rv = client.post('/api/run_task', json=urls)
     

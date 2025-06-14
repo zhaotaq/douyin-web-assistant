@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 # Technical Specification & Agile Protocol: Douyin Automation Assistant (Web)
 

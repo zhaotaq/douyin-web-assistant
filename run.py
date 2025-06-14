@@ -1,6 +1,6 @@
 import os
 from app import create_app
-from database import init_db
+from app.database import init_db
 from app.services import automator
 
 # 在运行应用前，先确保数据库已初始化

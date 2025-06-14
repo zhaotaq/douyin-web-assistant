@@ -1,0 +1,63 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+ 
+### **任务名称：本地版抖音助手功能移植**
+
+**核心目标：** 以 `douyin-dianzan` 目录中的本地版代码为基准，将其中基于 **Playwright** 实现的、功能完善的**点赞和评论逻辑**，完整、准确地移植到Web项目中，替换现有的 `app/services/automator.py` 中基于Selenium的、功能不全的逻辑，并确保所有功能与Web项目的数据库和任务队列无缝对接。
+
+---
+
+### **【规则一：环境与依赖调整】**
+
+1.  **分析 `requirements.txt`**:
+    * **移除**旧依赖：`selenium`, `webdriver-manager`。
+    * **添加**新依赖：`playwright`。
+2.  **更新指令**: 在最终的报告中，明确提醒您（用户）需要运行以下两个命令来更新环境：
+    * `pip install -r requirements.txt`
+    * `playwright install`
+
+### **【规则二：核心自动化逻辑移植 `app/services/automator.py`】**
+
+此规则是整个任务的核心，我会将本地版本 `auto_manager.py` 的逻辑“吸收”到Web版本的 `Automator` 类中。
+
+1.  **替换自动化引擎**: 文件顶部的导入语句将从 `import selenium...` 更改为 `from playwright.async_api import async_playwright`。
+2.  **重构`Automator`类**:
+    * `_initialize_driver` 方法：重写此方法，用于启动一个Playwright浏览器实例。
+    * `_login` 方法：适配此方法。它仍然会从数据库读取账户和Cookie，但将使用Playwright的 `browser.new_context(storage_state=...)` 功能来加载登录状态。
+    * `_cleanup` 方法：重写此方法，以确保能正确关闭Playwright的浏览器和上下文。
+3.  **完整移植 `_process_url` 流程**: 完全用本地版本 `auto_manager.py` 中的主处理逻辑替换 `_process_url`。新的流程将是：
+    * 导航到用户主页。
+    * 滚动页面以加载足够多的视频。
+    * 获取视频详情页链接列表。
+    * 循环访问**每一个视频详情页**。
+4.  **完整移植精细化操作方法**:
+    * **点赞 `_handle_like`**: 创建此方法，并从本地版本中完整移植“通过执行JavaScript检查SVG颜色来判断是否已点赞”的逻辑。
+    * **评论 `_handle_comment`**: 创建此方法，并完整移植以下关键逻辑：
+        * 通过执行JavaScript获取当前用户头像URL。
+        * 滚动评论区，并执行JavaScript来比对所有评论者头像，以**精确避免重复评论**。
+        * 调用数据库接口获取随机评论内容。
+        * 模拟键盘输入和发送。
+        * 包含处理手机验证码的等待逻辑。
+
+### **【规则三：与Web后端架构整合】**
+
+确保移植过来的逻辑能与Web项目的现有架构（特别是数据库）正确交互。
+
+1.  **替换文件操作为数据库操作**:
+    * **读取已处理记录**: 所有原先读取 `processed_videos/*.txt` 的地方，将全部替换为调用 `db.has_interacted()` 数据库函数。
+    * **写入已处理记录**: 所有原先写入 `processed_videos/*.txt` 的地方，将全部替换为调用 `db.log_interaction()` 数据库函数。
+    * **读取评论池**: 所有原先从 `comments_pool.txt` 读取随机评论的地方，将全部替换为调用 `db.get_random_comment()` 数据库函数。
+2.  **保留任务队列和日志**: 新的自动化逻辑将继续使用 `_log_to_db` 方法，将日志写入数据库，前端可以实时看到您本地版本那样的详细日志输出。
+
+### **【规则四：最终审查与清理】**
+
+1.  **移除无用代码**: 在完成逻辑替换后，清理 `automator.py` 中所有与Selenium相关的、不再被使用的旧代码。
+2.  **代码注释**: 在关键的移植代码处添加注释，说明该逻辑来源于本地版本，以备后续维护。
+3.  **确认兼容性**: 确保整个 `automator.py` 作为一个模块，能被 `app/__init__.py` 中的后台线程正常调用。
+
+
+
+ 

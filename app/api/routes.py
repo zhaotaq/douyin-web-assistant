@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from flask import Blueprint, jsonify, request, current_app
 from app.services import automator
-import database as db
+from .. import database as db
 
 # 创建一个名为 'api' 的蓝图
 bp = Blueprint('api', __name__)
@@ -28,9 +28,8 @@ def create_task():
             return jsonify({"code": 4031, "error": "调试模式需要有效的管理员密码。"}), 403
 
     try:
-        urls = data['urls']
-        # 将调试模式标志一起存入数据库
-        task_id = db.add_task_to_queue(urls, debug_mode)
+        urls_str = "\\n".join(data['urls'])
+        task_id = db.create_task(urls=urls_str)
         return jsonify({
             "code": 0,
             "message": "任务已成功加入队列",

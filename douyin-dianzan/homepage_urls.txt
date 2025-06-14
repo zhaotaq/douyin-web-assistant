@@ -1,0 +1,20 @@
+# 抖音用户主页地址库
+# 每行一个链接，以 # 开头的行为注释
+# 格式：https://www.douyin.com/user/用户ID
+# 
+# 使用说明：
+# 1. 将要批量处理的抖音用户主页链接添加到下面
+# 2. 每行一个链接
+# 3. 程序会轮流让不同账户访问这些主页，进行点赞和评论
+# 
+# 示例（请替换为真实的链接）：
+# https://www.douyin.com/user/MS4wLjABAAAANwkJuWIRFOzg5uCRuQdOVSLSZ-cSLJjlV4UXCb-BvhY
+# https://www.douyin.com/user/MS4wLjABAAAAQMY9Q-XNHe_9NKhqJSLBWzQ9XKd6tZ8F5V9YJz-2XqI
+
+# 在下面添加您要处理的真实主页链接：
+
+https://www.douyin.com/user/MS4wLjABAAAAsHiJOEyP0AkoKETDrnShPvoFtDoiwKPOh0zUvrrffrg
+https://www.douyin.com/user/MS4wLjABAAAAoJumMqgYKLRSIhUQURGTlhtlwK5U1KmMb6k_2WBRXUhhhVcqP89faq8Wq1hPT-5i?from_tab_name=main
+https://www.douyin.com/user/MS4wLjABAAAAX4V99rQUx93GYzBTqh-FCgscZb2MqnLtKpgKtVNgkUn3JnWXSoY6sSk6uUYinhcA?from_tab_name=main
+https://www.douyin.com/user/MS4wLjABAAAAuQ7kf4YCHj_l8f25o9agvFm-9DHUJdk5bZCx4S-t9ObvU8P1_A1JWgnasRnHxyDY
+https://www.douyin.com/user/MS4wLjABAAAAw89AMafowhNEND2V-UI8trLJXhdvFrVvpD0lrPCLdawEjMnM8KEFvkAiGppUg9Ik?from_tab_name=main

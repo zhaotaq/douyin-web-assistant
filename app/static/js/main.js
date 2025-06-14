@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 };
                 
-                const { current_task, queue } = data.data;
+                const { current_task, pending_tasks } = data.data;
 
                 // --- Render Current Task & Manage Button States ---
                 if (current_task) {
@@ -118,8 +118,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // --- Render Queue ---
                 queueList.innerHTML = ''; // Clear previous list
-                if (queue && queue.length > 0) {
-                    queue.forEach(task => {
+                if (pending_tasks && pending_tasks.length > 0) {
+                    pending_tasks.forEach(task => {
                         const item = document.createElement('div');
                         item.className = 'queue-item';
                         item.textContent = `任务 #${task.id} (状态: ${task.status})`;
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // --- Clear Finished User Task ---
                 const isUserTaskRunning = current_task && current_task.id == userTaskId;
-                const isUserTaskInQueue = queue.some(t => t.id == userTaskId);
+                const isUserTaskInQueue = pending_tasks.some(t => t.id == userTaskId);
 
                 if (userTaskId && !isUserTaskRunning && !isUserTaskInQueue) {
                     console.log(`任务 #${userTaskId} 已结束，正在从本地存储中移除。`);

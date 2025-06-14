@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 ## PART 3: AGILE DEVELOPMENT & GIT WORKFLOW
 

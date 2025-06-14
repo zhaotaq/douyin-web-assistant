@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
  Frontend Integration
 CORS (Cross-Origin Resource Sharing): 后端Flask必须配置CORS来允许前端的跨域请求。

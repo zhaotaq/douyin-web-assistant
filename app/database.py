@@ -94,15 +94,37 @@ def init_db():
     ''')
     print("表 'content_pools' 创建成功或已存在。")
 
+    # --- 创建 task_queue 表 ---
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS task_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_type TEXT NOT NULL,
+        urls TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending', -- pending, running, completed, failed, stopped
+        log TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    ''')
+    print("表 'task_queue' 创建成功或已存在。")
+
     conn.commit()
     conn.close()
 
 # --- Account Functions ---
 
-def add_account(username, cookies_dict):
-    """添加一个新账户或更新现有账户的cookies。"""
+def add_account(username, cookies_list):
+    """
+    添加一个新账户或更新现有账户的cookies。
+    在保存前，会对cookie进行清理和格式化，以确保与Playwright兼容。
+    """
+    # 强制将cookie包装在一个 'cookies' 键下，以匹配本地文件的格式
+    storage_state = {"cookies": cookies_list}
+    
+    # 将格式化后的对象转为JSON字符串进行存储
+    cookies_str = json.dumps(storage_state, ensure_ascii=False)
+    
     conn = get_db_connection()
-    cookies_str = json.dumps(cookies_dict)
     try:
         conn.execute(
             "INSERT INTO accounts (username, cookies) VALUES (?, ?)",
@@ -222,5 +244,100 @@ def get_all_content_by_type(pool_type):
     ).fetchall()
     conn.close()
     return [item['content'] for item in content_list]
+
+# --- Task Queue Functions ---
+
+def create_task(urls: str, task_type='like_comment'):
+    """在任务队列中创建一个新任务。"""
+    conn = get_db_connection()
+    cursor = conn.execute(
+        "INSERT INTO task_queue (urls, task_type, status) VALUES (?, ?, ?)",
+        (urls, task_type, 'pending')
+    )
+    task_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return task_id
+
+def get_pending_task():
+    """获取队列中第一个处于'pending'状态的任务。"""
+    conn = get_db_connection()
+    task = conn.execute(
+        "SELECT * FROM task_queue WHERE status = 'pending' ORDER BY created_at ASC LIMIT 1"
+    ).fetchone()
+    conn.close()
+    return task
+
+def update_task_status(task_id, status, log=None, append=True):
+    """更新任务的状态和日志。"""
+    conn = get_db_connection()
+    if log is not None:
+        if append:
+            # 获取现有日志并追加
+            current_log = conn.execute("SELECT log FROM task_queue WHERE id = ?", (task_id,)).fetchone()
+            new_log = (current_log['log'] if current_log and current_log['log'] else '') + log + '\\n'
+            conn.execute(
+                "UPDATE task_queue SET status = ?, log = ?, last_updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (status, new_log, task_id)
+            )
+        else:
+            # 覆盖日志
+            conn.execute(
+                "UPDATE task_queue SET status = ?, log = ?, last_updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (status, log + '\\n', task_id)
+            )
+    else:
+        conn.execute(
+            "UPDATE task_queue SET status = ?, last_updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (status, task_id)
+        )
+    conn.commit()
+    conn.close()
+
+def get_task_status(task_id):
+    """获取特定任务的状态和日志。"""
+    conn = get_db_connection()
+    task = conn.execute("SELECT status, log FROM task_queue WHERE id = ?", (task_id,)).fetchone()
+    conn.close()
+    return task
+
+def get_system_status():
+    """获取系统状态，包括当前任务和等待队列"""
+    conn = get_db_connection()
+    
+    current_task = conn.execute(
+        "SELECT id, status, log FROM task_queue WHERE status IN ('running', 'stopping') ORDER BY last_updated_at DESC LIMIT 1"
+    ).fetchone()
+    
+    pending_tasks = conn.execute(
+        "SELECT id, status FROM task_queue WHERE status = 'pending' ORDER BY created_at ASC"
+    ).fetchall()
+    
+    conn.close()
+    
+    return {
+        "current_task": dict(current_task) if current_task else None,
+        "pending_tasks": [dict(task) for task in pending_tasks]
+    }
+
+# --- Account Status/Cookie Functions ---
+def update_account_login_time(account_id):
+    """更新账户的最后登录时间。"""
+    conn = get_db_connection()
+    conn.execute("UPDATE accounts SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?", (account_id,))
+    conn.commit()
+    conn.close()
+
+def update_account_status(account_id, status):
+    """更新账户的状态 (e.g., 'expired')。"""
+    conn = get_db_connection()
+    conn.execute("UPDATE accounts SET status = ? WHERE id = ?", (status, account_id))
+    conn.commit()
+    conn.close()
+
+# --- Comment Pool ---
+def get_random_comment():
+    """从评论池中随机获取一条评论。"""
+    return get_random_content('comment')
 
 # 接下来将在这里添加数据操作函数... 

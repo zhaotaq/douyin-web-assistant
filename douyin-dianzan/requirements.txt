@@ -1,0 +1,7 @@
+playwright==1.41.2
+asyncio==3.4.3
+flask==2.3.3
+flask-sqlalchemy==3.0.5
+flask-login==0.6.3
+werkzeug==2.3.7
+pygame==2.5.2 
